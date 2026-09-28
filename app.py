@@ -37,7 +37,7 @@ st.markdown("""
     }
     .weather-card {
         background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-        border: 1px solid #0284c7; padding: 15px; border-radius: 10px;
+        border: 1px solid #0284c7; padding: 12px 18px; border-radius: 10px;
         margin-bottom: 20px; color: #0369a1;
     }
     .status-pending {
@@ -269,7 +269,7 @@ if "form_data" not in st.session_state:
 def sanitize_text(text):
     if not isinstance(text, str):
         text = str(text)
-    text = text.replace("🔥", "[Point Chaud]").replace("🦺", "[Confiné]").replace("🧗", "[Hauteur]").replace("⚡", "[LOTO]")
+    text = text.replace("🔥", "[Pt Chaud]").replace("🦺", "[Confiné]").replace("🧗", "[Hauteur]").replace("⚡", "[LOTO]")
     text = text.replace("⚠️", "[!]").replace("✅", "[OK]").replace("🚜", "[Excavation]").replace("🚀", "")
     
     normalized = unicodedata.normalize('NFKD', text)
@@ -572,12 +572,11 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.step = 5
                     st.rerun()
 
-        # ÉTAPE 5 : CHECK-LIST INTEGRALE, EPIS & ENCART MÉTÉO AVEC SEUILS DYNAMIQUES
+        # ÉTAPE 5 : CHECK-LIST INTEGRALE, EPIS & ENCART MÉTÉO COMPACT SUR 2 LIGNES
         elif current_step == 5:
             st.subheader("5. Check-list Intégrale, STA, Dangers & EPIs Normés P&G")
 
             # --- DÉTERMINATION DU CALCUL ET DE LA COULEUR SELON LES SEUILS VENT ---
-            # Vitesse retenue selon la date choisie (Aujourd'hui vs Demain)
             is_demain = ("demain" in st.session_state.form_data["date_str"]) or (st.session_state.form_data["date_str"] != datetime.date.today().strftime("%d/%m/%Y"))
             vitesse_vent = st.session_state.form_data["vent_vitesse_demain"] if is_demain else st.session_state.form_data["vent_vitesse_aujourdhui"]
 
@@ -586,35 +585,30 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 badge_border = "#22c55e"
                 badge_color = "#166534"
                 badge_status = "🟢 <b>Vigilance Vent : Conforme (< 30 km/h)</b>"
-                badge_msg = "Conditions favorables pour travaux en hauteur, grutage et nacelles."
+                badge_msg = "Conditions favorables (Hauteur / Grutage / Nacelles)"
             elif 30 <= vitesse_vent < 36:
                 badge_bg = "#ffedd5"
                 badge_border = "#f97316"
                 badge_color = "#9a3412"
                 badge_status = "🟠 <b>Vigilance Vent : Vigilance Absolue (30 à 35 km/h)</b>"
-                badge_msg = "Surveillance continue requise. Anémomètre obligatoire sur zone."
+                badge_msg = "Surveillance continue requise sur zone"
             else: # >= 36
                 badge_bg = "#fee2e2"
                 badge_border = "#ef4444"
                 badge_color = "#991b1b"
                 badge_status = "🔴 <b>Vigilance Vent : SEUIL ATTEINT (>= 36 km/h)</b>"
-                badge_msg = "INTERDICTION / ARRÊT IMMÉDIAT des travaux en hauteur, grutage et nacelles."
+                badge_msg = "ARRÊT IMMÉDIAT (Hauteur / Grutage / Nacelles)"
 
-            # --- WIDGET MÉTÉO COMPORTANT LA MISA A LA LIGNE ET LE BADGE DYNAMIQUE ---
+            # --- ENCART MÉTÉO COMPACT TÉNANT STRICTEMENT SUR 2 LIGNES ---
             st.markdown(f"""
             <div class="weather-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <div>
-                        <h4 style="margin:0 0 6px 0; color:#0369a1;">🌤️ Météo & Conditions Intervention — Site d'Amiens</h4>
-                        <p style="margin:0; font-size:0.95rem; line-height: 1.5;">
-                            <b>Aujourd'hui :</b> 16°C — Nuageux | Vent : {st.session_state.form_data['vent_vitesse_aujourdhui']} km/h<br>
-                            <b>Demain :</b> 18°C — Ensoleillé | Vent : {st.session_state.form_data['vent_vitesse_demain']} km/h
-                        </p>
-                    </div>
-                    <div style="text-align:right; font-size:0.85rem; background:{badge_bg}; color:{badge_color}; padding:10px 14px; border-radius:8px; border:2px solid {badge_border}; font-weight:bold;">
-                        {badge_status}<br>
-                        <span style="font-size:0.78rem; font-weight:normal;">{badge_msg}</span>
-                    </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-size: 0.95rem;">🌤️ <b>Aujourd'hui :</b> 16°C — Nuageux | Vent : {st.session_state.form_data['vent_vitesse_aujourdhui']} km/h</span>
+                    <span style="background:{badge_bg}; color:{badge_color}; border:1px solid {badge_border}; padding:3px 10px; border-radius:6px; font-size:0.82rem; font-weight:bold;">{badge_status}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.95rem;">☀️ <b>Demain :</b> 18°C — Ensoleillé | Vent : {st.session_state.form_data['vent_vitesse_demain']} km/h</span>
+                    <span style="font-size: 0.78rem; color: #475569; font-weight: 500;">{badge_msg}</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
