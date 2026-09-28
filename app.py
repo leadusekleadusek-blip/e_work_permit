@@ -1270,10 +1270,14 @@ else:
             else:
                 st.markdown("<div class='status-pending'>⚠️ PERMIS EN ATTENTE DE VALIDATION BATCH (07h30)</div>", unsafe_allow_html=True)
 
+            # Permis spécifiques et dérogations
+            spe_and_derog = p.get('permis_specifiques', []) + p.get('derogations', [])
+            spe_str = ", ".join(spe_and_derog) if spe_and_derog else "Aucun permis spécifique ou dérogation requis"
+
             st.markdown(f"""
             <div style="background: white; border: 2px solid #003366; padding: 20px; border-radius: 8px;">
                 <h3 style="color:#003366; margin:0;">PERMIS DE TRAVAIL GÉNÉRAL (STA) — P&G AMIENS</h3>
-                <hr>
+                <hr style="margin: 10px 0;">
                 <p><b>Réf :</b> {p['id']} | <b>Date Intervention :</b> {p.get('date_travaux', 'Aujourd\'hui')} | <b>Horodatage :</b> {p['heure']}</p>
                 <p><b>Entreprise :</b> {p['societe']} | <b>PDP :</b> {p['pdp']} | <b>MoP :</b> {p.get('mop', 'MoP Standard')}</p>
                 <p><b>Responsable N2 :</b> {p['n2']}</p>
@@ -1281,13 +1285,20 @@ else:
                 <p><b>Point de Rassemblement :</b> {p.get('pr')} | <b>Confinement :</b> {p.get('confinement')}</p>
                 <p><b>Poste d'Urgence Secteur :</b> {p.get('urg')}</p>
                 <p><b>Intervenants Signataires :</b> {', '.join(p.get('intervenants', []))}</p>
-                <p><b>Permis Spécifiques / Dérogations :</b> {', '.join(p.get('permis_specifiques', []) + p.get('derogations', [])) if (p.get('permis_specifiques') or p.get('derogations')) else 'Aucun'}</p>
-                <hr>
-                <p style="text-align:center; color:#003366; font-weight:bold; margin:0;">
-                    ✅ SIGNATURES VECTORIELLES AUDITÉES & HORODATÉES EN BDD
-                </p>
+                <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 10px; margin: 12px 0; border-radius: 4px;">
+                    <p style="margin:0; color:#92400e; font-weight:bold;">🚨 Permis Spécifiques / Dérogations Actifs :</p>
+                    <p style="margin:4px 0 0 0; color:#78350f;">{spe_str}</p>
+                </div>
             </div>
             """, unsafe_allow_html=True)
+
+            st.write("")
+            st.write("##### 📊 Analyse des Risques & Moyens de Prévention / EPIs sur Zone")
+            risques_audit = p.get("tableau_risques", [])
+            if risques_audit:
+                st.table(risques_audit)
+            else:
+                st.info("Aucune donnée spécifique de risques renseignée.")
 
             st.write("")
             pdf_audit_bytes = generer_pdf_bytes(p)
