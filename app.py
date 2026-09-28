@@ -55,28 +55,24 @@ st.markdown("""
 # ---------------------------------------------------------
 # FONCTION DE RÉCUPÉRATION MÉTÉO EN DIRECT (OPEN-METEO AMIENS)
 # ---------------------------------------------------------
-@st.cache_data(ttl=1800) # Maintient en cache pendant 30 min pour éviter de surcharger
+@st.cache_data(ttl=1800)
 def obtenir_meteo_amiens_live():
-    """Récupère la météo réelle d'Amiens via Open-Meteo API (Latitude: 49.89, Longitude: 2.29)"""
+    """Récupère la météo réelle d'Amiens via Open-Meteo API"""
     try:
         url = "https://api.open-meteo.com/v1/forecast?latitude=49.8941&longitude=2.2957&daily=temperature_2m_max,windgusts_10m_max&timezone=Europe%2FParis"
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req, timeout=3) as response:
             data = json.loads(response.read().decode())
-            
             temp_j0 = round(data['daily']['temperature_2m_max'][0])
             vent_j0 = round(data['daily']['windgusts_10m_max'][0])
-            
             temp_j1 = round(data['daily']['temperature_2m_max'][1])
             vent_j1 = round(data['daily']['windgusts_10m_max'][1])
-            
             return {
                 "temp_j0": temp_j0, "vent_j0": vent_j0,
                 "temp_j1": temp_j1, "vent_j1": vent_j1,
                 "source": "Open-Meteo Live API"
             }
     except Exception:
-        # Valeurs de secours en cas de coupure internet/réseau
         return {
             "temp_j0": 16, "vent_j0": 14,
             "temp_j1": 18, "vent_j1": 9,
@@ -123,14 +119,8 @@ db_zones_carto = {
     }
 }
 
-activites_meuleuse = [
-    "Ajustement découpe tuyauterie / profilé acier",
-    "Arasement de cordon de soudure",
-    "Tronçonnage de tige filetée / supportage",
-    "Ébavurage de pièce métallique",
-    "Saignée dans béton / maçonnerie",
-    "Autre activité (Préciser en texte libre)"
-]
+db_materiaux = ["Acier / Carbone", "Inox 316L / 304L", "Aluminium", "Béton / Maçonnerie / Carrelage", "PVC / Plastique", "Autre matériau"]
+db_disques_blanchiment = ["Disque fibre abrasif", "Brosse métallique torsadée", "Disque à décapant synthétique (Clean & Strip)", "Disque semi-flexible"]
 
 etapes_noms = [
     "1. Date & Entreprise", 
@@ -189,50 +179,38 @@ if "form_data" not in st.session_state:
         "intervenants": ["Léa DUSEK"],
         
         # Permis Spécifiques
-        "p_hauteur": False,
-        "p_toiture": False,
-        "p_points_chauds": False,
-        "p_excavation": False,
-        "p_grutage": False,
-        "p_confine": False,
-        "p_electrique": False,
-        "p_consignation_pression": False,
-        "p_consignation_mecanique": False,
-        "p_consignation_equipement": False,
-        "p_consignation_laser": False,
-        "p_chimique": False,
-        "p_demolition": False,
+        "p_hauteur": False, "p_toiture": False, "p_points_chauds": False, "p_excavation": False,
+        "p_grutage": False, "p_confine": False, "p_electrique": False, "p_consignation_pression": False,
+        "p_consignation_mecanique": False, "p_consignation_equipement": False, "p_consignation_laser": False,
+        "p_chimique": False, "p_demolition": False,
 
         # Champs spécifiques obligatoires
-        "confine_o2": "20.9 %",
-        "confine_co_h2s": "0 ppm (Conforme)",
-        "confine_vigie": "Matthieu MARTIN",
-        "confine_ventilation": True,
-        "chaud_travaux": "Soudure Chalumeau / Meulage",
-        "chaud_extincteur": "Extincteur Eau Pulvérisée 6L + CO2 sur zone",
-        "chaud_ronde_post": "Ronde de sécurité programmée 2h après fin de chauffe",
-        "loto_cadenas": "LOTO-PG-884",
-        "loto_charge": "Léa DUSEK",
-        "loto_fluide_elec": "Électrique & Pneumatique",
-        "hauteur_ancrage": "Ligne de vie conforme EN 795 / Point d'ancrage vérifié",
-        "hauteur_harnais": "Harnais 2 longes avec absorbeur d'énergie",
+        "confine_o2": "20.9 %", "confine_co_h2s": "0 ppm (Conforme)", "confine_vigie": "Matthieu MARTIN", "confine_ventilation": True,
+        "chaud_travaux": "Soudure Chalumeau / Meulage", "chaud_extincteur": "Extincteur Eau Pulvérisée 6L + CO2 sur zone", "chaud_ronde_post": "Ronde de sécurité programmée 2h après fin de chauffe",
+        "loto_cadenas": "LOTO-PG-884", "loto_charge": "Léa DUSEK", "loto_fluide_elec": "Électrique & Pneumatique",
+        "hauteur_ancrage": "Ligne de vie conforme EN 795 / Point d'ancrage vérifié", "hauteur_harnais": "Harnais 2 longes avec absorbeur d'énergie",
         "toiture_balisage": "Balisage zone d'exclusion au sol effectué",
-        "excav_reseaux": "DICT / Plan des réseaux enterrés validé",
-        "excav_blindage": "Blindage / Talutage mis en place (> 1.30m)",
-        "grutage_capacite": "Charge de levage < 80% capacité grue",
-        "grutage_sol": "Plaques de répartition des stabs posées",
+        "excav_reseaux": "DICT / Plan des réseaux enterrés validé", "excav_blindage": "Blindage / Talutage mis en place (> 1.30m)",
+        "grutage_capacite": "Charge de levage < 80% capacité grue", "grutage_sol": "Plaques de répartition des stabs posées",
 
         # STA & Outils
-        "sta_prod_chimique": False,
-        "produits_liste": "",
-        "sta_dta": False,
-        "sta_electroportatif": False,
-        "sta_meuleuse": False,
-        "meuleuse_activite": activites_meuleuse[0],
-        "meuleuse_texte_libre": "",
-        "sta_pirl_nacelle": False,
-        "sta_couteau_lame": False,
-        "sta_echelle_escabeau": False,
+        "sta_prod_chimique": False, "produits_liste": "", "sta_dta": False,
+        "sta_electroportatif": False, "sta_meuleuse": False,
+        
+        # MEULEUSE - DONNÉES SPÉCIFIQUES COMPLÈTES
+        "meuleuse_marque": "Bosch Professional",
+        "meuleuse_alim": "Batterie 18V",
+        "meuleuse_ref": "MEU-PG-042",
+        "meuleuse_vitesse": "11 000 tr/min",
+        "meuleuse_u_decoupe": False,
+        "meuleuse_mat_decoupe": db_materiaux[0],
+        "meuleuse_u_ebavurage": False,
+        "meuleuse_mat_ebavurage": db_materiaux[0],
+        "meuleuse_u_flap": False,
+        "meuleuse_u_blanchiment": False,
+        "meuleuse_disque_blanchiment": db_disques_blanchiment[0],
+
+        "sta_pirl_nacelle": False, "sta_couteau_lame": False, "sta_echelle_escabeau": False,
 
         # Dangers & Risques
         "r_exigu": False, "r_superpose": False, "r_inconfortable": False, "r_fumee_poussiere": False,
@@ -546,11 +524,9 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.step = 5
                     st.rerun()
 
-        # ÉTAPE 5 : MÉTÉO EN DIRECT VIA API
         elif current_step == 5:
             st.subheader("5. Check-list Intégrale, STA, Dangers & EPIs Normés P&G")
 
-            # INTERROGATION APIS EN DIRECT
             meteo_live = obtenir_meteo_amiens_live()
             is_demain = ("demain" in st.session_state.form_data["date_str"]) or (st.session_state.form_data["date_str"] != datetime.date.today().strftime("%d/%m/%Y"))
             vitesse_vent = meteo_live["vent_j1"] if is_demain else meteo_live["vent_j0"]
@@ -617,10 +593,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 st.session_state.form_data["sta_electroportatif"] = st.checkbox("Utilisation de matériel électroportatif", value=st.session_state.form_data["sta_electroportatif"])
                 if st.session_state.form_data["sta_electroportatif"]:
                     st.session_state.form_data["sta_meuleuse"] = st.checkbox("Utilisation d'une Meuleuse d'angle ➔ Dérogation Meuleuse", value=st.session_state.form_data["sta_meuleuse"])
-                    if st.session_state.form_data["sta_meuleuse"]:
-                        st.session_state.form_data["meuleuse_activite"] = st.selectbox("Activité réalisée à la meuleuse :", activites_meuleuse)
-                        if "Autre" in st.session_state.form_data["meuleuse_activite"]:
-                            st.session_state.form_data["meuleuse_texte_libre"] = st.text_input("Préciser l'activité meuleuse :")
 
                 st.session_state.form_data["sta_couteau_lame"] = st.checkbox("Utilisation de couteau / lame ouverte ➔ Dérogation Casque Rouge", value=st.session_state.form_data["sta_couteau_lame"])
                 if st.session_state.form_data["sta_couteau_lame"]:
@@ -722,6 +694,9 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.step = 6
                     st.rerun()
 
+        # =====================================================
+        # ÉTAPE 6 : FORMULAIRES DÉTAILLÉS PAR PERMIS SPÉCIFIQUE
+        # =====================================================
         elif current_step == 6:
             st.subheader("6. Formulaires Spécifiques (HRT) & Données Obligatoires à Remplir")
 
@@ -781,12 +756,75 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 with c2: st.session_state.form_data["grutage_sol"] = st.text_input("Stabilisation & Répartition au sol :", value=st.session_state.form_data["grutage_sol"])
                 st.divider()
 
+            # --- DÉROGATION MEULEUSE D'ANGLE AVEC CONSIGNES SÉCURITÉ DÉTAILLÉES ---
             if st.session_state.form_data["sta_meuleuse"]:
                 has_spe = True
-                st.error("⚠️ **DÉROGATION UTILISATION MEULEUSE D'ANGLE**")
-                st.write(f"- **Activité enregistrée :** {st.session_state.form_data['meuleuse_activite']}")
-                if st.session_state.form_data["meuleuse_texte_libre"]:
-                    st.write(f"- **Précision :** {st.session_state.form_data['meuleuse_texte_libre']}")
+                st.error("⚠️ **DÉROGATION UTILISATION MEULEUSE D'ANGLE — PROTOCOLE SÉCURITÉ P&G**")
+                
+                st.markdown("##### 1. Identification Préalable de l'Équipement")
+                c_m1, c_m2, c_m3, c_m4 = st.columns(4)
+                with c_m1:
+                    st.session_state.form_data["meuleuse_marque"] = st.text_input("Marque de la meuleuse :", value=st.session_state.form_data["meuleuse_marque"])
+                with c_m2:
+                    st.session_state.form_data["meuleuse_alim"] = st.selectbox("Type d'alimentation :", ["Batterie 18V/54V", "Filaire 230V", "Pneumatique"], index=0)
+                with c_m3:
+                    st.session_state.form_data["meuleuse_ref"] = st.text_input("Référence interne / N° Série :", value=st.session_state.form_data["meuleuse_ref"])
+                with c_m4:
+                    st.session_state.form_data["meuleuse_vitesse"] = st.text_input("Vitesse max meuleuse (tr/min) :", value=st.session_state.form_data["meuleuse_vitesse"])
+
+                st.warning("⚠️ **Rappels de Sécurité Obligatoires sur les Disques :**\n"
+                           "- La **vitesse de rotation maximale du disque** doit être STRICTEMENT SUPÉRIEURE à la vitesse de rotation de la meuleuse.\n"
+                           "- Les disques utilisés doivent avoir une **date de validité non dépassée** (vérification gravure sur la bague centrale).")
+
+                st.markdown("##### 2. Sélection du ou des types d'utilisation :")
+                
+                cm_u1, cm_u2, cm_u3, cm_u4 = st.columns(4)
+                with cm_u1:
+                    st.session_state.form_data["meuleuse_u_decoupe"] = st.checkbox("✂️ **Découpes**", value=st.session_state.form_data["meuleuse_u_decoupe"])
+                with cm_u2:
+                    st.session_state.form_data["meuleuse_u_ebavurage"] = st.checkbox("🛠️ **Ébavurage**", value=st.session_state.form_data["meuleuse_u_ebavurage"])
+                with cm_u3:
+                    st.session_state.form_data["meuleuse_u_flap"] = st.checkbox("🌀 **Flap**", value=st.session_state.form_data["meuleuse_u_flap"])
+                with cm_u4:
+                    st.session_state.form_data["meuleuse_u_blanchiment"] = st.checkbox("✨ **Blanchiment**", value=st.session_state.form_data["meuleuse_u_blanchiment"])
+
+                # DÉTAILS DYNAMIQUES SELON LES CHOIX COCHÉS
+                if st.session_state.form_data["meuleuse_u_decoupe"]:
+                    st.info("📌 **Détails - DÉCOUPES :**")
+                    cd1, cd2 = st.columns(2)
+                    with cd1:
+                        st.session_state.form_data["meuleuse_mat_decoupe"] = st.selectbox("Matériau à découper :", db_materiaux, key="mat_dec")
+                    with cd2:
+                        st.write("• **Type de disque :** Disque à tronçonner fin / Diamant (Assignation auto)")
+                        st.error("🔒 **Protection :** DOUBLE CARTER OBLIGATOIRE sur la meuleuse.")
+                        st.caption("📐 **Angle d'attaque :** Respect strict de l'angle de **90°** avec le matériau.")
+
+                if st.session_state.form_data["meuleuse_u_ebavurage"]:
+                    st.info("📌 **Détails - ÉBAVURAGE :**")
+                    ce1, ce2 = st.columns(2)
+                    with ce1:
+                        st.session_state.form_data["meuleuse_mat_ebavurage"] = st.selectbox("Matériau à ébavurer :", db_materiaux, key="mat_eba")
+                    with ce2:
+                        st.write("• **Type de disque :** Disque à ébavurer épais à moyeu déporté (Assignation auto)")
+                        st.warning("🔒 **Protection :** SIMPLE CARTER obligatoire.")
+                        st.caption("📐 **Angle d'attaque :** Respect strict de l'angle de **30° à 40°** avec le matériau.")
+
+                if st.session_state.form_data["meuleuse_u_flap"]:
+                    st.info("📌 **Détails - FLAP :**")
+                    st.write("• **Type de disque :** Disque à lamelles abrasives (Flap)")
+                    st.warning("🔒 **Protection :** SIMPLE CARTER obligatoire.")
+                    st.caption("📐 **Angle d'attaque :** Respect strict de l'angle de **15° à 25°** avec le matériau.")
+
+                if st.session_state.form_data["meuleuse_u_blanchiment"]:
+                    st.info("📌 **Détails - BLANCHIMENT :**")
+                    cb1, cb2 = st.columns(2)
+                    with cb1:
+                        st.session_state.form_data["meuleuse_disque_blanchiment"] = st.selectbox("Choix du disque de blanchiment :", db_disques_blanchiment)
+                    with cb2:
+                        st.warning("🔒 **Protection :** SIMPLE CARTER obligatoire.")
+                        st.caption("📐 **Positionnement :** Incliné à plat par rapport au matériau.")
+
+                st.divider()
 
             if st.session_state.form_data["sta_couteau_lame"] or st.session_state.form_data["sta_echelle_escabeau"]:
                 has_spe = True
@@ -806,6 +844,9 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.step = 7
                     st.rerun()
 
+        # =====================================================
+        # ÉTAPE 7 : SYNTHÈSE, PDF DIRECT & CO-SIGNATURES TACTILES
+        # =====================================================
         elif current_step == 7:
             st.subheader("7. Synthèse Globale, Téléchargement PDF & Co-signatures Tactiles")
 
@@ -829,8 +870,21 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             tableau_data = []
             if st.session_state.form_data["sta_prod_chimique"]:
                 tableau_data.append({"activite": "Utilisation Produits Chimiques", "risque": "Inhalation / Contact FDS", "prevention": f"Produits: {st.session_state.form_data['produits_liste']} - {epis_str_summary}"})
+            
             if st.session_state.form_data["sta_meuleuse"]:
-                tableau_data.append({"activite": "Meuleuse d'angle", "risque": "Projections étincelles / Éclatement disque", "prevention": "Visière EN 166B + Gants Anti-coupure 4543 + Carter"})
+                util_meu = []
+                if st.session_state.form_data["meuleuse_u_decoupe"]: util_meu.append(f"Découpe ({st.session_state.form_data['meuleuse_mat_decoupe']} - Double carter - 90°)")
+                if st.session_state.form_data["meuleuse_u_ebavurage"]: util_meu.append(f"Ébavurage ({st.session_state.form_data['meuleuse_mat_ebavurage']} - Simple carter - 30-40°)")
+                if st.session_state.form_data["meuleuse_u_flap"]: util_meu.append("Flap (Simple carter - 15-25°)")
+                if st.session_state.form_data["meuleuse_u_blanchiment"]: util_meu.append(f"Blanchiment ({st.session_state.form_data['meuleuse_disque_blanchiment']} - À plat)")
+                
+                details_meu_txt = " + ".join(util_meu) if util_meu else "Meulage standard"
+                tableau_data.append({
+                    "activite": f"Meuleuse ({st.session_state.form_data['meuleuse_marque']} {st.session_state.form_data['meuleuse_vitesse']})",
+                    "risque": "Projections étincelles / Éclatement disque",
+                    "prevention": f"{details_meu_txt} + Visière EN 166B + Gants 4543"
+                })
+
             if st.session_state.form_data["p_confine"]:
                 tableau_data.append({"activite": "Espace Confiné (CBA 105)", "risque": "Asphyxie / Anoxie (Azote)", "prevention": f"O2 ({st.session_state.form_data['confine_o2']}) + Vigie ({st.session_state.form_data['confine_vigie']})"})
             if st.session_state.form_data["p_points_chauds"] or st.session_state.form_data["r_feu_flamme"]:
