@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Style CSS P&G avec fond d'application très clair et barre de progression visuelle
+# Style CSS P&G avec fond d'application très clair et barre de progression visuelle alignée
 st.markdown("""
 <style>
     /* Fond principal fortement éclairci pour maximiser le contraste */
@@ -64,73 +64,80 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
-    /* BARRE DE PROGRESSION & STEPPER DYNAMIQUE */
+    /* BARRE DE PROGRESSION & STEPPER DYNAMIQUE SUR LA MÊME LIGNE */
     .stepper-container {
         background: white;
         border: 1px solid #cbd5e1;
         border-radius: 12px;
-        padding: 18px 20px;
+        padding: 24px 20px 18px 20px;
         margin-bottom: 25px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.03);
     }
-    .progress-track {
-        background-color: #e2e8f0;
-        height: 6px;
-        border-radius: 3px;
+    .stepper-wrapper {
         position: relative;
-        margin-bottom: 15px;
-        overflow: hidden;
-    }
-    .progress-fill {
-        background-color: #10b981;
-        height: 100%;
-        transition: width 0.4s ease-in-out;
-    }
-    .steps-row {
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
+    }
+    .progress-track {
+        position: absolute;
+        top: 13px;
+        left: 5%;
+        right: 5%;
+        height: 4px;
+        background-color: #e2e8f0;
+        z-index: 1;
+    }
+    .progress-fill {
+        height: 100%;
+        background-color: #10b981;
+        transition: width 0.4s ease-in-out;
     }
     .step-item {
         display: flex;
         flex-direction: column;
         align-items: center;
         flex: 1;
-        font-size: 0.82rem;
+        font-size: 0.8rem;
         font-weight: 600;
         color: #64748b;
         text-align: center;
+        z-index: 2;
     }
     .step-badge {
-        width: 28px;
-        height: 28px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 0.85rem;
         font-weight: bold;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
+        background-color: white;
+        border: 3px solid #cbd5e1;
+        color: #64748b;
+        transition: all 0.3s ease;
     }
     .step-completed .step-badge {
         background-color: #10b981;
+        border-color: #10b981;
         color: white;
     }
-    .step-completed {
-        color: #059669;
-    }
+    .step-completed { color: #059669; }
+
     .step-active .step-badge {
         background-color: #003366;
+        border-color: #003366;
         color: white;
-        box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.2);
+        box-shadow: 0 0 0 4px rgba(0, 51, 102, 0.2);
     }
-    .step-active {
-        color: #003366;
-        font-weight: bold;
-    }
+    .step-active { color: #003366; font-weight: bold; }
+
     .step-upcoming .step-badge {
-        background-color: #cbd5e1;
-        color: #475569;
+        background-color: white;
+        border-color: #cbd5e1;
+        color: #94a3b8;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -529,15 +536,17 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
         current_step = st.session_state.step
         total_steps = len(etapes_noms)
+        
+        # Calcul du pourcentage d'avancement centré sur les puces
         progress_pct = int(((current_step - 1) / (total_steps - 1)) * 100)
 
-        # Génération du composant HTML de la barre de progression
+        # Génération du composant HTML du stepper
         stepper_html = f"""
         <div class="stepper-container">
-            <div class="progress-track">
-                <div class="progress-fill" style="width: {progress_pct}%;"></div>
-            </div>
-            <div class="steps-row">
+            <div class="stepper-wrapper">
+                <div class="progress-track">
+                    <div class="progress-fill" style="width: {progress_pct}%;"></div>
+                </div>
         """
 
         for idx, name in enumerate(etapes_noms, 1):
@@ -563,7 +572,10 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 </div>
                 """
 
-        stepper_html += "</div></div>"
+        stepper_html += """
+            </div>
+        </div>
+        """
         st.markdown(stepper_html, unsafe_allow_html=True)
 
         if current_step == 1:
