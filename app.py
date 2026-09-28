@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Style CSS P&G (Fond adouci #f1f5f9, Style Cartes & Stepper)
+# Style CSS P&G (Fond adouci #f1f5f9, Style Cartes, Météo & Stepper)
 st.markdown("""
 <style>
     .stApp {
@@ -34,6 +34,11 @@ st.markdown("""
     .stepper-bar {
         background: white; border: 1px solid #cbd5e1; padding: 12px; border-radius: 10px;
         margin-bottom: 20px; text-align: center; font-weight: bold;
+    }
+    .weather-card {
+        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+        border: 1px solid #0284c7; padding: 15px; border-radius: 10px;
+        margin-bottom: 20px; color: #0369a1;
     }
     .status-pending {
         background-color: #fef08a; color: #854d0e; border: 2px solid #eab308;
@@ -179,6 +184,31 @@ if "form_data" not in st.session_state:
         "p_chimique": False,
         "p_demolition": False,
 
+        # CHAMPS SPÉCIFIQUES OBLIGATOIRES (Étape 6)
+        # Espace confiné
+        "confine_o2": "20.9 %",
+        "confine_co_h2s": "0 ppm (Conforme)",
+        "confine_vigie": "Matthieu MARTIN",
+        "confine_ventilation": True,
+        # Point chaud
+        "chaud_travaux": "Soudure Chalumeau / Meulage",
+        "chaud_extincteur": "Extincteur Eau Pulvérisée 6L + CO2 sur zone",
+        "chaud_ronde_post": "Ronde de sécurité programmée 2h après fin de chauffe",
+        # Consignation LOTO
+        "loto_cadenas": "LOTO-PG-884",
+        "loto_charge": "Léa DUSEK",
+        "loto_fluide_elec": "Électrique & Pneumatique",
+        # Travail en Hauteur / Toiture
+        "hauteur_ancrage": "Ligne de vie conforme EN 795 / Point d'ancrage vérifié",
+        "hauteur_harnais": "Harnais 2 longes avec absorbeur d'énergie",
+        "toiture_balisage": "Balisage zone d'exclusion au sol effectué",
+        # Excavation
+        "excav_reseaux": "DICT / Plan des réseaux enterrés validé",
+        "excav_blindage": "Blindage / Talutage mis en place (> 1.30m)",
+        # Grutage
+        "grutage_capacite": "Charge de levage < 80% capacité grue",
+        "grutage_sol": "Plaques de répartition des stabs posées",
+
         # STA & Outils
         "sta_prod_chimique": False,
         "produits_liste": "",
@@ -221,37 +251,24 @@ if "form_data" not in st.session_state:
         "tms_torsion": False,
         "tms_statique": False,
 
-        # --- EXHAUSTIVITÉ DU RÉFÉRENTIEL EPIS P&G AMIENS ---
-        # Lunettes (EN 166)
+        # EPIS EXHAUSTIFS
         "epi_lunettes_chantier_visiere": True,
         "epi_lunettes_etanches": False,
-        # Protection faciale (EN 166B)
         "epi_visiere_idra": False,
         "epi_pare_visage": False,
-        # Casques (EN 387/A1)
-        "epi_casque_jugulaire": False, # Auto-coché si hauteur
+        "epi_casque_jugulaire": False,
         "epi_casque_auditif": False,
-        # Gants
-        "epi_gants_coupure": True,     # 4543 / 4X43D
-        "epi_gants_manutention": False, # Cuir bovin / chèvre
-        "epi_gants_chimique": False,   # EN 374-1/2
-        "epi_gants_electrique": False, # EN 60903 isolants / surgants
-        # Bouchons d'oreilles
+        "epi_gants_coupure": True,
+        "epi_gants_manutention": False,
+        "epi_gants_chimique": False,
+        "epi_gants_electrique": False,
         "epi_bouchons_jetables": False,
         "epi_bouchons_moules": False,
-        # Protections respiratoires
         "epi_ffp1_ffp2": False,
         "epi_3m6000": False,
         "epi_versaflo": False,
-        "epi_cartouche_abek": False,    # EN 14387
-        # Autre texte libre
-        "epi_autre": "",
-
-        # Détails Spécifiques
-        "confine_o2": "20.9 %",
-        "confine_vigie": "Matthieu MARTIN",
-        "chaud_travaux": "Soudure Chalumeau / Meulage",
-        "loto_cadenas": "LOTO-PG-884"
+        "epi_cartouche_abek": False,
+        "epi_autre": ""
     }
 
 # ---------------------------------------------------------
@@ -563,9 +580,26 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.step = 5
                     st.rerun()
 
-        # ÉTAPE 5 : CHECK-LIST INTEGRALE & EPIs NORMÉS EXHAUSTIFS
+        # ÉTAPE 5 : CHECK-LIST INTEGRALE, EPIS & ENCART MÉTÉO SÉCURITÉ
         elif current_step == 5:
             st.subheader("5. Check-list Intégrale, STA, Dangers & EPIs Normés P&G")
+
+            # --- WIDGET MÉTÉO DU JOUR ET DU LENDEMAINS (AMIENS) ---
+            st.markdown("""
+            <div class="weather-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="margin:0; color:#0369a1;">🌤️ Météo & Conditions Intervention — Site d'Amiens</h4>
+                        <p style="margin:2px 0 0 0; font-size:0.9rem;">
+                            <b>Aujourd'hui :</b> 16°C — Nuageux / Vent 14 km/h (Incrochable) | <b>Demain :</b> 18°C — Ensoleillé / Vent 9 km/h
+                        </p>
+                    </div>
+                    <div style="text-align:right; font-size:0.85rem; background:white; padding:6px 12px; border-radius:6px; border:1px solid #7dd3fc;">
+                        🟢 <b>Vigilance Vent : Conforme</b> (< 45 km/h pour Grutage / Nacelle)
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
             st.error("🚨 **Identification des Risques Principaux ➔ Déclencheurs de Permis Spécifiques (HRT)**")
             c_rp1, c_rp2 = st.columns(2)
@@ -657,7 +691,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             *Les chaussures de sécurité montantes, le casque avec jugulaire, les lunettes de sécurité à protection latérale (EN 166), le gilet haute visibilité (sauf pour travaux électriques ou point chaud) et les gants anti-coupure sont OBLIGATOIRES sur le chantier de construction.*
             """)
 
-            # --- SECTION EPIS EXHAUSTIVE ET CONFORME AU RÉFÉRENTIEL ---
+            # SECTION EPIS EXHAUSTIVE ET CONFORME
             st.write("##### 🥽 Équipements de Protection Individuelle (EPIs Normés P&G)")
 
             col_e1, col_e2, col_e3, col_e4 = st.columns(4)
@@ -711,41 +745,74 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.rerun()
 
         # =====================================================
-        # ÉTAPE 6 : REPRISE EXHAUSTIVE DES PERMIS SPÉCIFIQUES & DÉROGATIONS
+        # ÉTAPE 6 : FORMULAIRES DÉTAILLÉS PAR PERMIS SPÉCIFIQUE
         # =====================================================
         elif current_step == 6:
-            st.subheader("6. Formulaires Spécifiques (HRT) & Consignes des Dérogations")
+            st.subheader("6. Formulaires Spécifiques (HRT) & Données Obligatoires à Remplir")
 
             has_spe = False
 
+            # 1. PERMIS ESPACE CONFINÉ (CBA 105)
             if st.session_state.form_data["p_confine"]:
                 has_spe = True
-                st.info("🦺 **PERMIS ESPACE CONFINÉ (CBA 105)**")
-                c_c1, c_c2 = st.columns(2)
-                with c_c1: st.session_state.form_data["confine_o2"] = st.text_input("Taux O2 mesuré sur zone :", value=st.session_state.form_data["confine_o2"])
-                with c_c2: st.session_state.form_data["confine_vigie"] = st.text_input("Nom de la Vigie Extérieure Obligatoire :", value=st.session_state.form_data["confine_vigie"])
+                st.info("🦺 **PERMIS ESPACE CONFINÉ (CBA 105)** — Données d'Analyse d'Atmosphère")
+                c1, c2, c3 = st.columns(3)
+                with c1: st.session_state.form_data["confine_o2"] = st.text_input("Taux O2 mesuré (Normal 20.9%) :", value=st.session_state.form_data["confine_o2"])
+                with c2: st.session_state.form_data["confine_co_h2s"] = st.text_input("Seuil CO / H2S / Explosimétrie :", value=st.session_state.form_data["confine_co_h2s"])
+                with c3: st.session_state.form_data["confine_vigie"] = st.text_input("Nom & Prénom Vigie Extérieure Obligatoire :", value=st.session_state.form_data["confine_vigie"])
+                st.session_state.form_data["confine_ventilation"] = st.checkbox("Ventilation forcée / Extraction d'air active", value=st.session_state.form_data["confine_ventilation"])
+                st.divider()
 
+            # 2. PERMIS POINTS CHAUDS / SOUDURE
             if st.session_state.form_data["p_points_chauds"] or st.session_state.form_data["r_feu_flamme"] or st.session_state.form_data["r_metaux_chaud"]:
                 has_spe = True
-                st.warning("🔥 **PERMIS POINTS CHAUDS / SOUDURE / MEULAGE**")
-                st.session_state.form_data["chaud_travaux"] = st.text_input("Nature des travaux de chauffe :", value=st.session_state.form_data["chaud_travaux"])
-                st.write("- Extincteur sur zone + Ronde de sécurité obligatoire 2 heures après la fin des travaux.")
+                st.warning("🔥 **PERMIS POINTS CHAUDS / SOUDURE / MEULAGE** — Consignes Incendie")
+                c1, c2 = st.columns(2)
+                with c1: st.session_state.form_data["chaud_travaux"] = st.text_input("Nature des travaux de chauffe / outils :", value=st.session_state.form_data["chaud_travaux"])
+                with c2: st.session_state.form_data["chaud_extincteur"] = st.text_input("Moyens d'extinction présents sur zone :", value=st.session_state.form_data["chaud_extincteur"])
+                st.session_state.form_data["chaud_ronde_post"] = st.text_input("Procédure Ronde Sécurité Post-Chauffe :", value=st.session_state.form_data["chaud_ronde_post"])
+                st.divider()
 
+            # 3. PERMIS CONSIGNATION LOTO
             if st.session_state.form_data["p_consignation_pression"] or st.session_state.form_data["p_consignation_mecanique"] or st.session_state.form_data["p_consignation_equipement"] or st.session_state.form_data["p_consignation_laser"]:
                 has_spe = True
-                st.success("⚡ **PERMIS CONSIGNATION / DECONSIGNATION (LOTO)**")
-                st.session_state.form_data["loto_cadenas"] = st.text_input("Numéro de Cadenas LOTO appliqué :", value=st.session_state.form_data["loto_cadenas"])
+                st.success("⚡ **PERMIS CONSIGNATION / DECONSIGNATION (LOTO)** — Identifiants Sécurité")
+                c1, c2, c3 = st.columns(3)
+                with c1: st.session_state.form_data["loto_cadenas"] = st.text_input("Numéro de Cadenas LOTO appliqué :", value=st.session_state.form_data["loto_cadenas"])
+                with c2: st.session_state.form_data["loto_charge"] = st.text_input("Chargé de Consignation Responsable :", value=st.session_state.form_data["loto_charge"])
+                with c3: st.session_state.form_data["loto_fluide_elec"] = st.text_input("Énergies / Fluides consignés :", value=st.session_state.form_data["loto_fluide_elec"])
+                st.divider()
 
+            # 4. PERMIS TRAVAIL EN HAUTEUR / ACCÈS TOITURE
             if st.session_state.form_data["p_hauteur"] or st.session_state.form_data["p_toiture"]:
                 has_spe = True
-                st.error("🧗 **PERMIS TRAVAIL EN HAUTEUR / ACCÈS TOITURE**")
-                st.write("- Vérification du point d'ancrage + Port du harnais 2 longes obligatoire avec absorbeur d'énergie.")
+                st.error("🧗 **PERMIS TRAVAIL EN HAUTEUR / ACCÈS TOITURE** — Contrôle des Équipements")
+                c1, c2 = st.columns(2)
+                with c1: st.session_state.form_data["hauteur_ancrage"] = st.text_input("Point d'ancrage / Ligne de vie vérifiée :", value=st.session_state.form_data["hauteur_ancrage"])
+                with c2: st.session_state.form_data["hauteur_harnais"] = st.text_input("Type de Harnais & Longes :", value=st.session_state.form_data["hauteur_harnais"])
+                if st.session_state.form_data["p_toiture"]:
+                    st.session_state.form_data["toiture_balisage"] = st.text_input("Balisage / Sécurisation accès toiture :", value=st.session_state.form_data["toiture_balisage"])
+                st.divider()
 
+            # 5. PERMIS EXCAVATION / TRANCHÉE
             if st.session_state.form_data["p_excavation"]:
                 has_spe = True
-                st.warning("🚜 **PERMIS EXCAVATION / TRANCHÉE / SOL**")
-                st.write("- Détection des réseaux enterrés effectuée + Blindage des parois au-delà de 1.30m.")
+                st.warning("🚜 **PERMIS EXCAVATION / TRANCHÉE / OUVERTURE DE SOL**")
+                c1, c2 = st.columns(2)
+                with c1: st.session_state.form_data["excav_reseaux"] = st.text_input("Contrôle réseaux enterrés (DICT / Détection) :", value=st.session_state.form_data["excav_reseaux"])
+                with c2: st.session_state.form_data["excav_blindage"] = st.text_input("Moyens de blindage / talutage prévus :", value=st.session_state.form_data["excav_blindage"])
+                st.divider()
 
+            # 6. PERMIS GRUTAGE / LEVAGE
+            if st.session_state.form_data["p_grutage"]:
+                has_spe = True
+                st.info("🏗️ **PERMIS GRUTAGE & OPÉRATION DE LEVAGE**")
+                c1, c2 = st.columns(2)
+                with c1: st.session_state.form_data["grutage_capacite"] = st.text_input("Capacité & Plan de levage validé :", value=st.session_state.form_data["grutage_capacite"])
+                with c2: st.session_state.form_data["grutage_sol"] = st.text_input("Stabilisation & Répartition au sol :", value=st.session_state.form_data["grutage_sol"])
+                st.divider()
+
+            # 7. DÉROGATIONS SPÉCIFIQUES
             if st.session_state.form_data["sta_meuleuse"]:
                 has_spe = True
                 st.error("⚠️ **DÉROGATION UTILISATION MEULEUSE D'ANGLE**")
@@ -756,7 +823,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             if st.session_state.form_data["sta_couteau_lame"] or st.session_state.form_data["sta_echelle_escabeau"]:
                 has_spe = True
                 st.warning("⚠️ **DÉROGATION CASQUE ROUGE (Cutter Lame Ouverte / Échelle / Escabeau)**")
-                st.write("- Validation accordée après inspection et absence d'alternative technique.")
+                st.write("- Validation accordée après inspection terrain et absence d'alternative technique.")
 
             if not has_spe:
                 st.success("✅ **Aucun permis spécifique supplémentaire ni dérogation requis pour ce chantier.**")
@@ -781,7 +848,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
             st.write("##### 📊 1. Tableau Récapitulatif : Activités, Risques Identifiés & Moyens de Prévention")
             
-            # Assemblage dynamique du tableau de synthèse des risques & EPIs sélectionnés
             epis_list_txt = []
             if st.session_state.form_data["epi_lunettes_chantier_visiere"]: epis_list_txt.append("Lunettes EN 166")
             if st.session_state.form_data["epi_visiere_idra"]: epis_list_txt.append("Visière IDRA EN 166B")
@@ -801,11 +867,11 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             if st.session_state.form_data["sta_meuleuse"]:
                 tableau_data.append({"activite": "Meuleuse d'angle", "risque": "Projections étincelles / Éclatement disque", "prevention": "Visière EN 166B + Gants Anti-coupure 4543 + Carter"})
             if st.session_state.form_data["p_confine"]:
-                tableau_data.append({"activite": "Espace Confiné (CBA 105)", "risque": "Asphyxie / Anoxie (Azote)", "prevention": f"Mesure O2 ({st.session_state.form_data['confine_o2']}) + Vigie ({st.session_state.form_data['confine_vigie']})"})
+                tableau_data.append({"activite": "Espace Confiné (CBA 105)", "risque": "Asphyxie / Anoxie (Azote)", "prevention": f"O2 ({st.session_state.form_data['confine_o2']}) + Vigie ({st.session_state.form_data['confine_vigie']})"})
             if st.session_state.form_data["p_points_chauds"] or st.session_state.form_data["r_feu_flamme"]:
-                tableau_data.append({"activite": "Points Chauds / Soudure", "risque": "Incendie / Brûlures", "prevention": "Extincteur sur zone + Ronde sécurité 2h après travaux"})
+                tableau_data.append({"activite": "Points Chauds / Soudure", "risque": "Incendie / Brûlures", "prevention": f"{st.session_state.form_data['chaud_extincteur']} + {st.session_state.form_data['chaud_ronde_post']}"})
             if st.session_state.form_data["p_hauteur"] or st.session_state.form_data["sta_echelle_escabeau"]:
-                tableau_data.append({"activite": "Travail en Hauteur / Échelle", "risque": "Chute de hauteur / Chute d'objets", "prevention": "Harnais 2 longes + Casque Jugulaire EN 387"})
+                tableau_data.append({"activite": "Travail en Hauteur / Échelle", "risque": "Chute de hauteur / Chute d'objets", "prevention": f"{st.session_state.form_data['hauteur_harnais']} + Casque Jugulaire"})
 
             if not tableau_data:
                 tableau_data.append({"activite": "Travaux Généraux du PDP", "risque": "Risques standards de chantier", "prevention": epis_str_summary})
@@ -822,10 +888,12 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 if st.session_state.form_data["p_confine"]: spe_list.append("Permis Espace Confiné")
                 if st.session_state.form_data["p_hauteur"]: spe_list.append("Permis Travail en Hauteur")
                 if st.session_state.form_data["p_consignation_pression"]: spe_list.append("Permis Consignation LOTO")
+                if st.session_state.form_data["p_excavation"]: spe_list.append("Permis Excavation")
+                if st.session_state.form_data["p_grutage"]: spe_list.append("Permis Grutage")
 
                 if spe_list:
                     for s in spe_list:
-                        st.info(f"**{s}** — Consignes complémentaires validées et actives sur la zone.")
+                        st.info(f"**{s}** — Données spécifiques renseignées et consignes actives.")
                 else:
                     st.success("✅ Aucun permis spécifique requis.")
 
