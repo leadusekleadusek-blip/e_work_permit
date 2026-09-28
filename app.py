@@ -1,4 +1,6 @@
 import datetime
+import json
+import urllib.request
 import streamlit as st
 import unicodedata
 from fpdf import FPDF
@@ -13,15 +15,11 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Style CSS P&G (Fond adouci #f1f5f9, Style Cartes, Météo & Stepper)
+# Style CSS P&G
 st.markdown("""
 <style>
-    .stApp {
-        background-color: #f1f5f9 !important;
-    }
-    .main {
-        background-color: #f1f5f9;
-    }
+    .stApp { background-color: #f1f5f9 !important; }
+    .main { background-color: #f1f5f9; }
     .pg-header {
         background: linear-gradient(135deg, #003366 0%, #0056b3 100%);
         color: white; padding: 22px; border-radius: 12px; margin-bottom: 20px;
@@ -50,11 +48,40 @@ st.markdown("""
         padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.1rem;
         margin-bottom: 15px;
     }
-    .stButton>button {
-        border-radius: 8px; font-weight: bold;
-    }
+    .stButton>button { border-radius: 8px; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
+
+# ---------------------------------------------------------
+# FONCTION DE RÉCUPÉRATION MÉTÉO EN DIRECT (OPEN-METEO AMIENS)
+# ---------------------------------------------------------
+@st.cache_data(ttl=1800) # Maintient en cache pendant 30 min pour éviter de surcharger
+def obtenir_meteo_amiens_live():
+    """Récupère la météo réelle d'Amiens via Open-Meteo API (Latitude: 49.89, Longitude: 2.29)"""
+    try:
+        url = "https://api.open-meteo.com/v1/forecast?latitude=49.8941&longitude=2.2957&daily=temperature_2m_max,windgusts_10m_max&timezone=Europe%2FParis"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=3) as response:
+            data = json.loads(response.read().decode())
+            
+            temp_j0 = round(data['daily']['temperature_2m_max'][0])
+            vent_j0 = round(data['daily']['windgusts_10m_max'][0])
+            
+            temp_j1 = round(data['daily']['temperature_2m_max'][1])
+            vent_j1 = round(data['daily']['windgusts_10m_max'][1])
+            
+            return {
+                "temp_j0": temp_j0, "vent_j0": vent_j0,
+                "temp_j1": temp_j1, "vent_j1": vent_j1,
+                "source": "Open-Meteo Live API"
+            }
+    except Exception:
+        # Valeurs de secours en cas de coupure internet/réseau
+        return {
+            "temp_j0": 16, "vent_j0": 14,
+            "temp_j1": 18, "vent_j1": 9,
+            "source": "Mode Hors-Ligne (Secours)"
+        }
 
 # ---------------------------------------------------------
 # RÉFÉRENTIELS & BASES DE DONNÉES P&G
@@ -83,24 +110,16 @@ db_n2 = ["Léa DUSEK", "Matthieu MARTIN", "Alexandre LEFEBVRE", "Cindy BERNARD"]
 
 db_zones_carto = {
     "Bâtiment M1 - Zone Production": {
-        "pr": "PR-2 (Parking Ouest)",
-        "confinement": "ZC-01 (Hall M1)",
-        "urgence": "03.22.54.33.33 (Poste Garde M1)"
+        "pr": "PR-2 (Parking Ouest)", "confinement": "ZC-01 (Hall M1)", "urgence": "03.22.54.33.33 (Poste Garde M1)"
     },
     "Bâtiment M1 - Bureaux": {
-        "pr": "PR-2 (Parking Ouest)",
-        "confinement": "ZC-01 (Hall M1)",
-        "urgence": "03.22.54.30.00 (Infirmerie M1)"
+        "pr": "PR-2 (Parking Ouest)", "confinement": "ZC-01 (Hall M1)", "urgence": "03.22.54.30.00 (Infirmerie M1)"
     },
     "Bâtiment M2 - Conditionnement": {
-        "pr": "PR-4 (Zone Nord)",
-        "confinement": "ZC-03 (Atrium M2)",
-        "urgence": "03.22.54.33.34 (Poste Garde M2)"
+        "pr": "PR-4 (Zone Nord)", "confinement": "ZC-03 (Atrium M2)", "urgence": "03.22.54.33.34 (Poste Garde M2)"
     },
     "Zone Extérieure / Logistique": {
-        "pr": "PR-1 (Entrée Principale)",
-        "confinement": "ZC-00 (Poste Central)",
-        "urgence": "03.22.54.33.33 (SAMU Site)"
+        "pr": "PR-1 (Entrée Principale)", "confinement": "ZC-00 (Poste Central)", "urgence": "03.22.54.33.33 (SAMU Site)"
     }
 }
 
@@ -152,7 +171,7 @@ if "permis_db" not in st.session_state:
 
 # Navigation Kiosk
 if "kiosk_mode" not in st.session_state:
-    st.session_state.kiosk_mode = "HOME" # HOME, PDP, PERMIS
+    st.session_state.kiosk_mode = "HOME"
 if "step" not in st.session_state:
     st.session_state.step = 1
 
@@ -169,10 +188,6 @@ if "form_data" not in st.session_state:
         "description": "Peinture mur nord bureau 104",
         "intervenants": ["Léa DUSEK"],
         
-        # Météo & Vent
-        "vent_vitesse_aujourdhui": 14,
-        "vent_vitesse_demain": 9,
-
         # Permis Spécifiques
         "p_hauteur": False,
         "p_toiture": False,
@@ -188,7 +203,7 @@ if "form_data" not in st.session_state:
         "p_chimique": False,
         "p_demolition": False,
 
-        # CHAMPS SPÉCIFIQUES OBLIGATOIRES (Étape 6)
+        # Champs spécifiques obligatoires
         "confine_o2": "20.9 %",
         "confine_co_h2s": "0 ppm (Conforme)",
         "confine_vigie": "Matthieu MARTIN",
@@ -220,47 +235,20 @@ if "form_data" not in st.session_state:
         "sta_echelle_escabeau": False,
 
         # Dangers & Risques
-        "r_exigu": False,
-        "r_superpose": False,
-        "r_inconfortable": False,
-        "r_fumee_poussiere": False,
-        "r_bruit_80db": False,
-        "r_rayonnement": False,
-        "r_enzymes": False,
-        "r_eq_mouvement": False,
-        "r_chute_objets": False,
-        "r_vehicule": False,
-        "r_escalier": False,
-        "r_liquide_sol": False,
-        "r_ouverture_sol": False,
-        "r_stockage_sol": False,
-        "r_bords_tranchants": False,
-        "r_perforation": False,
-        "r_metaux_chaud": False,
-        "r_metaux_froid": False,
-        "r_feu_flamme": False,
-        "r_cables_sol": False,
-        "r_voies_circulation": False,
-        "r_stockage_defini": True,
+        "r_exigu": False, "r_superpose": False, "r_inconfortable": False, "r_fumee_poussiere": False,
+        "r_bruit_80db": False, "r_rayonnement": False, "r_enzymes": False, "r_eq_mouvement": False,
+        "r_chute_objets": False, "r_vehicule": False, "r_escalier": False, "r_liquide_sol": False,
+        "r_ouverture_sol": False, "r_stockage_sol": False, "r_bords_tranchants": False,
+        "r_perforation": False, "r_metaux_chaud": False, "r_metaux_froid": False,
+        "r_feu_flamme": False, "r_cables_sol": False, "r_voies_circulation": False, "r_stockage_defini": True,
 
         # EPIS EXHAUSTIFS
-        "epi_lunettes_chantier_visiere": True,
-        "epi_lunettes_etanches": False,
-        "epi_visiere_idra": False,
-        "epi_pare_visage": False,
-        "epi_casque_jugulaire": False,
-        "epi_casque_auditif": False,
-        "epi_gants_coupure": True,
-        "epi_gants_manutention": False,
-        "epi_gants_chimique": False,
-        "epi_gants_electrique": False,
-        "epi_bouchons_jetables": False,
-        "epi_bouchons_moules": False,
-        "epi_ffp1_ffp2": False,
-        "epi_3m6000": False,
-        "epi_versaflo": False,
-        "epi_cartouche_abek": False,
-        "epi_autre": ""
+        "epi_lunettes_chantier_visiere": True, "epi_lunettes_etanches": False,
+        "epi_visiere_idra": False, "epi_pare_visage": False, "epi_casque_jugulaire": False,
+        "epi_casque_auditif": False, "epi_gants_coupure": True, "epi_gants_manutention": False,
+        "epi_gants_chimique": False, "epi_gants_electrique": False, "epi_bouchons_jetables": False,
+        "epi_bouchons_moules": False, "epi_ffp1_ffp2": False, "epi_3m6000": False,
+        "epi_versaflo": False, "epi_cartouche_abek": False, "epi_autre": ""
     }
 
 # ---------------------------------------------------------
@@ -271,7 +259,6 @@ def sanitize_text(text):
         text = str(text)
     text = text.replace("🔥", "[Pt Chaud]").replace("🦺", "[Confiné]").replace("🧗", "[Hauteur]").replace("⚡", "[LOTO]")
     text = text.replace("⚠️", "[!]").replace("✅", "[OK]").replace("🚜", "[Excavation]").replace("🚀", "")
-    
     normalized = unicodedata.normalize('NFKD', text)
     cleaned = ''.join(c for c in normalized if not unicodedata.combining(c))
     return cleaned.encode('latin-1', 'ignore').decode('latin-1')
@@ -284,7 +271,6 @@ def generer_pdf_bytes(permis):
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
 
-    # Header P&G
     pdf.set_fill_color(0, 51, 102)
     pdf.rect(10, 10, 190, 22, 'F')
     pdf.set_text_color(255, 255, 255)
@@ -295,7 +281,6 @@ def generer_pdf_bytes(permis):
 
     pdf.set_y(38)
 
-    # Encart Statut
     if permis['statut'] == 'VALIDÉ':
         pdf.set_fill_color(220, 252, 231)
         pdf.set_draw_color(34, 197, 94)
@@ -314,7 +299,6 @@ def generer_pdf_bytes(permis):
     pdf.set_text_color(0, 0, 0)
     pdf.set_y(54)
 
-    # 1. Infos Générales
     pdf.set_font("Helvetica", "B", 11)
     pdf.cell(0, 6, sanitize_text("1. INFORMATIONS GENERALES & LOCALISATION"), 0, 1)
     pdf.set_font("Helvetica", "", 9)
@@ -325,7 +309,6 @@ def generer_pdf_bytes(permis):
     pdf.cell(0, 5, sanitize_text(f"Urgence Secteur: {permis.get('urg')}"), 0, 1)
     pdf.ln(3)
 
-    # 2. Tableau Risques
     pdf.set_font("Helvetica", "B", 11)
     pdf.cell(0, 6, sanitize_text("2. SYNTHESE DES RISQUES ET MOYENS DE PREVENTION"), 0, 1)
     pdf.set_font("Helvetica", "B", 8)
@@ -351,7 +334,6 @@ def generer_pdf_bytes(permis):
 
     pdf.ln(3)
 
-    # 3. Permis spécifiques & Dérogations
     pdf.set_font("Helvetica", "B", 11)
     pdf.cell(0, 6, sanitize_text("3. PERMIS SPECIFIQUES ET DEROGATIONS"), 0, 1)
     pdf.set_font("Helvetica", "", 9)
@@ -364,7 +346,6 @@ def generer_pdf_bytes(permis):
 
     pdf.ln(3)
 
-    # 4. Signatures
     pdf.set_font("Helvetica", "B", 11)
     pdf.cell(0, 6, sanitize_text("4. CO-SIGNATURES TACTILES AUDITEES"), 0, 1)
     pdf.set_font("Helvetica", "", 8)
@@ -374,7 +355,7 @@ def generer_pdf_bytes(permis):
     return bytes(pdf.output())
 
 # ---------------------------------------------------------
-# BARRE LATÉRALE - SÉLECTION DES INTERFACES
+# BARRE LATÉRALE
 # ---------------------------------------------------------
 st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Procter_%26_Gamble_logo.svg/1024px-Procter_%26_Gamble_logo.svg.png", width=80)
 st.sidebar.title("e-Work Permit P&G")
@@ -401,7 +382,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
     </div>
     """, unsafe_allow_html=True)
 
-    # PAGE D'ACCUEIL VRAIE
     if st.session_state.kiosk_mode == "HOME":
         st.write("### Veuillez sélectionner votre démarche :")
         st.write("")
@@ -431,7 +411,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 st.session_state.kiosk_mode = "PDP"
                 st.rerun()
 
-    # PARCOURS 1 : ÉMARGEMENT PDP
     elif st.session_state.kiosk_mode == "PDP":
         if st.button("⬅️ Retour à l'accueil"):
             st.session_state.kiosk_mode = "HOME"
@@ -470,7 +449,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 st.success(f"Émargement validé avec succès pour {nom_pdp} ({statut_pdp}) sur le {pdp_sel} !")
                 st.session_state.kiosk_mode = "HOME"
 
-    # PARCOURS 2 : PERMIS DE TRAVAIL (PERMIS)
     elif st.session_state.kiosk_mode == "PERMIS":
 
         current_step = st.session_state.step
@@ -485,7 +463,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
         stepper_html += "</div>"
         st.markdown(stepper_html, unsafe_allow_html=True)
 
-        # ÉTAPE 1 : DATE & ENTREPRISE
         if current_step == 1:
             st.subheader("1. Date d'Intervention & Entreprise Extérieure")
             col_d1, col_d2 = st.columns(2)
@@ -513,7 +490,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.step = 2
                     st.rerun()
 
-        # ÉTAPE 2 : PDP & MoP
         elif current_step == 2:
             st.subheader(f"2. Plan de Prévention & Mode Opératoire — {st.session_state.form_data['societe']}")
             p_list = db_pdps.get(st.session_state.form_data["societe"], ["PDP Standard"])
@@ -532,7 +508,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.step = 3
                     st.rerun()
 
-        # ÉTAPE 3 : RESPONSABLE N2
         elif current_step == 3:
             st.subheader("3. Responsable N2 Présent sur le Chantier")
             st.session_state.form_data["n2_nom"] = st.selectbox("Responsable N2 qualifié :", db_n2, index=db_n2.index(st.session_state.form_data["n2_nom"]))
@@ -547,7 +522,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.step = 4
                     st.rerun()
 
-        # ÉTAPE 4 : CARTOGRAPHIE & URGENCES
         elif current_step == 4:
             st.subheader("4. Localisation & Assignation Automatique des Urgences")
             st.session_state.form_data["lieu_pdp"] = st.selectbox("Zone du Chantier :", list(db_zones_carto.keys()))
@@ -572,42 +546,36 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.step = 5
                     st.rerun()
 
-        # ÉTAPE 5 : CHECK-LIST INTEGRALE, EPIS & ENCART MÉTÉO COMPACT SUR 2 LIGNES
+        # ÉTAPE 5 : MÉTÉO EN DIRECT VIA API
         elif current_step == 5:
             st.subheader("5. Check-list Intégrale, STA, Dangers & EPIs Normés P&G")
 
-            # --- DÉTERMINATION DU CALCUL ET DE LA COULEUR SELON LES SEUILS VENT ---
+            # INTERROGATION APIS EN DIRECT
+            meteo_live = obtenir_meteo_amiens_live()
             is_demain = ("demain" in st.session_state.form_data["date_str"]) or (st.session_state.form_data["date_str"] != datetime.date.today().strftime("%d/%m/%Y"))
-            vitesse_vent = st.session_state.form_data["vent_vitesse_demain"] if is_demain else st.session_state.form_data["vent_vitesse_aujourdhui"]
+            vitesse_vent = meteo_live["vent_j1"] if is_demain else meteo_live["vent_j0"]
 
             if vitesse_vent < 30:
-                badge_bg = "#dcfce7"
-                badge_border = "#22c55e"
-                badge_color = "#166534"
+                badge_bg = "#dcfce7"; badge_border = "#22c55e"; badge_color = "#166534"
                 badge_status = "🟢 <b>Vigilance Vent : Conforme (< 30 km/h)</b>"
                 badge_msg = "Conditions favorables (Hauteur / Grutage / Nacelles)"
             elif 30 <= vitesse_vent < 36:
-                badge_bg = "#ffedd5"
-                badge_border = "#f97316"
-                badge_color = "#9a3412"
+                badge_bg = "#ffedd5"; badge_border = "#f97316"; badge_color = "#9a3412"
                 badge_status = "🟠 <b>Vigilance Vent : Vigilance Absolue (30 à 35 km/h)</b>"
                 badge_msg = "Surveillance continue requise sur zone"
-            else: # >= 36
-                badge_bg = "#fee2e2"
-                badge_border = "#ef4444"
-                badge_color = "#991b1b"
+            else:
+                badge_bg = "#fee2e2"; badge_border = "#ef4444"; badge_color = "#991b1b"
                 badge_status = "🔴 <b>Vigilance Vent : SEUIL ATTEINT (>= 36 km/h)</b>"
                 badge_msg = "ARRÊT IMMÉDIAT (Hauteur / Grutage / Nacelles)"
 
-            # --- ENCART MÉTÉO COMPACT TÉNANT STRICTEMENT SUR 2 LIGNES ---
             st.markdown(f"""
             <div class="weather-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <span style="font-size: 0.95rem;">🌤️ <b>Aujourd'hui :</b> 16°C — Nuageux | Vent : {st.session_state.form_data['vent_vitesse_aujourdhui']} km/h</span>
+                    <span style="font-size: 0.95rem;">🌤️ <b>Aujourd'hui :</b> {meteo_live['temp_j0']}°C | Rafales Vent : <b>{meteo_live['vent_j0']} km/h</b></span>
                     <span style="background:{badge_bg}; color:{badge_color}; border:1px solid {badge_border}; padding:3px 10px; border-radius:6px; font-size:0.82rem; font-weight:bold;">{badge_status}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.95rem;">☀️ <b>Demain :</b> 18°C — Ensoleillé | Vent : {st.session_state.form_data['vent_vitesse_demain']} km/h</span>
+                    <span style="font-size: 0.95rem;">☀️ <b>Demain :</b> {meteo_live['temp_j1']}°C | Rafales Vent : <b>{meteo_live['vent_j1']} km/h</b> <i style="font-size:0.75rem; opacity:0.8;">({meteo_live['source']})</i></span>
                     <span style="font-size: 0.78rem; color: #475569; font-weight: 500;">{badge_msg}</span>
                 </div>
             </div>
@@ -660,7 +628,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
                 st.session_state.form_data["sta_echelle_escabeau"] = st.checkbox("Utilisation d'échelle / escabeau / marche-pied ➔ Dérogation Casque Rouge", value=st.session_state.form_data["sta_echelle_escabeau"])
 
-            # RÈGLE MÉTIER AUTOMATIQUE : CASQUE AVEC JUGULAIRE
             is_travail_hauteur = (
                 st.session_state.form_data["p_hauteur"] or 
                 st.session_state.form_data["p_toiture"] or 
@@ -703,7 +670,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             *Les chaussures de sécurité montantes, le casque avec jugulaire, les lunettes de sécurité à protection latérale (EN 166), le gilet haute visibilité (sauf pour travaux électriques ou point chaud) et les gants anti-coupure sont OBLIGATOIRES sur le chantier de construction.*
             """)
 
-            # SECTION EPIS EXHAUSTIVE ET CONFORME
             st.write("##### 🥽 Équipements de Protection Individuelle (EPIs Normés P&G)")
 
             col_e1, col_e2, col_e3, col_e4 = st.columns(4)
@@ -756,15 +722,11 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.step = 6
                     st.rerun()
 
-        # =====================================================
-        # ÉTAPE 6 : FORMULAIRES DÉTAILLÉS PAR PERMIS SPÉCIFIQUE
-        # =====================================================
         elif current_step == 6:
             st.subheader("6. Formulaires Spécifiques (HRT) & Données Obligatoires à Remplir")
 
             has_spe = False
 
-            # 1. PERMIS ESPACE CONFINÉ (CBA 105)
             if st.session_state.form_data["p_confine"]:
                 has_spe = True
                 st.info("🦺 **PERMIS ESPACE CONFINÉ (CBA 105)** — Données d'Analyse d'Atmosphère")
@@ -775,7 +737,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 st.session_state.form_data["confine_ventilation"] = st.checkbox("Ventilation forcée / Extraction d'air active", value=st.session_state.form_data["confine_ventilation"])
                 st.divider()
 
-            # 2. PERMIS POINTS CHAUDS / SOUDURE
             if st.session_state.form_data["p_points_chauds"] or st.session_state.form_data["r_feu_flamme"] or st.session_state.form_data["r_metaux_chaud"]:
                 has_spe = True
                 st.warning("🔥 **PERMIS POINTS CHAUDS / SOUDURE / MEULAGE** — Consignes Incendie")
@@ -785,7 +746,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 st.session_state.form_data["chaud_ronde_post"] = st.text_input("Procédure Ronde Sécurité Post-Chauffe :", value=st.session_state.form_data["chaud_ronde_post"])
                 st.divider()
 
-            # 3. PERMIS CONSIGNATION LOTO
             if st.session_state.form_data["p_consignation_pression"] or st.session_state.form_data["p_consignation_mecanique"] or st.session_state.form_data["p_consignation_equipement"] or st.session_state.form_data["p_consignation_laser"]:
                 has_spe = True
                 st.success("⚡ **PERMIS CONSIGNATION / DECONSIGNATION (LOTO)** — Identifiants Sécurité")
@@ -795,7 +755,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 with c3: st.session_state.form_data["loto_fluide_elec"] = st.text_input("Énergies / Fluides consignés :", value=st.session_state.form_data["loto_fluide_elec"])
                 st.divider()
 
-            # 4. PERMIS TRAVAIL EN HAUTEUR / ACCÈS TOITURE
             if st.session_state.form_data["p_hauteur"] or st.session_state.form_data["p_toiture"]:
                 has_spe = True
                 st.error("🧗 **PERMIS TRAVAIL EN HAUTEUR / ACCÈS TOITURE** — Contrôle des Équipements")
@@ -806,7 +765,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.form_data["toiture_balisage"] = st.text_input("Balisage / Sécurisation accès toiture :", value=st.session_state.form_data["toiture_balisage"])
                 st.divider()
 
-            # 5. PERMIS EXCAVATION / TRANCHÉE
             if st.session_state.form_data["p_excavation"]:
                 has_spe = True
                 st.warning("🚜 **PERMIS EXCAVATION / TRANCHÉE / OUVERTURE DE SOL**")
@@ -815,7 +773,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 with c2: st.session_state.form_data["excav_blindage"] = st.text_input("Moyens de blindage / talutage prévus :", value=st.session_state.form_data["excav_blindage"])
                 st.divider()
 
-            # 6. PERMIS GRUTAGE / LEVAGE
             if st.session_state.form_data["p_grutage"]:
                 has_spe = True
                 st.info("🏗️ **PERMIS GRUTAGE & OPÉRATION DE LEVAGE**")
@@ -824,7 +781,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 with c2: st.session_state.form_data["grutage_sol"] = st.text_input("Stabilisation & Répartition au sol :", value=st.session_state.form_data["grutage_sol"])
                 st.divider()
 
-            # 7. DÉROGATIONS SPÉCIFIQUES
             if st.session_state.form_data["sta_meuleuse"]:
                 has_spe = True
                 st.error("⚠️ **DÉROGATION UTILISATION MEULEUSE D'ANGLE**")
@@ -850,9 +806,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.step = 7
                     st.rerun()
 
-        # =====================================================
-        # ÉTAPE 7 : SYNTHÈSE, PDF DIRECT & CO-SIGNATURES TACTILES
-        # =====================================================
         elif current_step == 7:
             st.subheader("7. Synthèse Globale, Téléchargement PDF & Co-signatures Tactiles")
 
@@ -942,7 +895,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
             st.divider()
 
-            # Permis temporaire pour génération du PDF
             permis_temp = {
                 "id": f"PT-2026-0928-0{len(st.session_state.permis_db)+1}",
                 "date_travaux": st.session_state.form_data["date_str"],
