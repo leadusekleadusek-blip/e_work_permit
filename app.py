@@ -15,11 +15,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Style CSS P&G avec mise en valeur des champs de saisie texte libre
+# Style CSS P&G avec fond d'application très clair pour maximiser le contraste des champs
 st.markdown("""
 <style>
-    .stApp { background-color: #f1f5f9 !important; }
-    .main { background-color: #f1f5f9; }
+    /* Fond principal fortement éclairci pour faire ressortir les encarts de saisie */
+    .stApp { background-color: #f8fafc !important; }
+    .main { background-color: #f8fafc; }
+
     .pg-header {
         background: linear-gradient(135deg, #003366 0%, #0056b3 100%);
         color: white; padding: 22px; border-radius: 12px; margin-bottom: 20px;
@@ -50,19 +52,19 @@ st.markdown("""
     }
     .stButton>button { border-radius: 8px; font-weight: bold; }
 
-    /* MISE EN VALEUR DES ENCARTS DE SAISIE ET TEXTE LIBRE */
+    /* MISE EN VALEUR ET CONTRASTE DES ENCARTS DE SAISIE ET TEXTE LIBRE */
     div[data-baseweb="input"] {
-        background-color: #f0f7ff !important;
-        border: 1.5px solid #003366 !important;
+        background-color: #e0f2fe !important;
+        border: 1.5px solid #0284c7 !important;
         border-radius: 8px !important;
     }
     div[data-baseweb="input"]:focus-within {
-        border-color: #0056b3 !important;
-        box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.2) !important;
+        border-color: #003366 !important;
+        box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.25) !important;
     }
     div[data-baseweb="select"] > div {
-        background-color: #f0f7ff !important;
-        border: 1.5px solid #003366 !important;
+        background-color: #e0f2fe !important;
+        border: 1.5px solid #0284c7 !important;
         border-radius: 8px !important;
     }
 </style>
