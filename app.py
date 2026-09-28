@@ -169,6 +169,10 @@ if "form_data" not in st.session_state:
         "description": "Peinture mur nord bureau 104",
         "intervenants": ["Léa DUSEK"],
         
+        # Météo & Vent
+        "vent_vitesse_aujourdhui": 14,
+        "vent_vitesse_demain": 9,
+
         # Permis Spécifiques
         "p_hauteur": False,
         "p_toiture": False,
@@ -185,27 +189,21 @@ if "form_data" not in st.session_state:
         "p_demolition": False,
 
         # CHAMPS SPÉCIFIQUES OBLIGATOIRES (Étape 6)
-        # Espace confiné
         "confine_o2": "20.9 %",
         "confine_co_h2s": "0 ppm (Conforme)",
         "confine_vigie": "Matthieu MARTIN",
         "confine_ventilation": True,
-        # Point chaud
         "chaud_travaux": "Soudure Chalumeau / Meulage",
         "chaud_extincteur": "Extincteur Eau Pulvérisée 6L + CO2 sur zone",
         "chaud_ronde_post": "Ronde de sécurité programmée 2h après fin de chauffe",
-        # Consignation LOTO
         "loto_cadenas": "LOTO-PG-884",
         "loto_charge": "Léa DUSEK",
         "loto_fluide_elec": "Électrique & Pneumatique",
-        # Travail en Hauteur / Toiture
         "hauteur_ancrage": "Ligne de vie conforme EN 795 / Point d'ancrage vérifié",
         "hauteur_harnais": "Harnais 2 longes avec absorbeur d'énergie",
         "toiture_balisage": "Balisage zone d'exclusion au sol effectué",
-        # Excavation
         "excav_reseaux": "DICT / Plan des réseaux enterrés validé",
         "excav_blindage": "Blindage / Talutage mis en place (> 1.30m)",
-        # Grutage
         "grutage_capacite": "Charge de levage < 80% capacité grue",
         "grutage_sol": "Plaques de répartition des stabs posées",
 
@@ -245,12 +243,6 @@ if "form_data" not in st.session_state:
         "r_voies_circulation": False,
         "r_stockage_defini": True,
 
-        # TMS
-        "tms_lourd": False,
-        "tms_repetitif": False,
-        "tms_torsion": False,
-        "tms_statique": False,
-
         # EPIS EXHAUSTIFS
         "epi_lunettes_chantier_visiere": True,
         "epi_lunettes_etanches": False,
@@ -277,7 +269,7 @@ if "form_data" not in st.session_state:
 def sanitize_text(text):
     if not isinstance(text, str):
         text = str(text)
-    text = text.replace("🔥", "[Pt Chaud]").replace("🦺", "[Confiné]").replace("🧗", "[Hauteur]").replace("⚡", "[LOTO]")
+    text = text.replace("🔥", "[Point Chaud]").replace("🦺", "[Confiné]").replace("🧗", "[Hauteur]").replace("⚡", "[LOTO]")
     text = text.replace("⚠️", "[!]").replace("✅", "[OK]").replace("🚜", "[Excavation]").replace("🚀", "")
     
     normalized = unicodedata.normalize('NFKD', text)
@@ -580,22 +572,48 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.step = 5
                     st.rerun()
 
-        # ÉTAPE 5 : CHECK-LIST INTEGRALE, EPIS & ENCART MÉTÉO SÉCURITÉ
+        # ÉTAPE 5 : CHECK-LIST INTEGRALE, EPIS & ENCART MÉTÉO AVEC SEUILS DYNAMIQUES
         elif current_step == 5:
             st.subheader("5. Check-list Intégrale, STA, Dangers & EPIs Normés P&G")
 
-            # --- WIDGET MÉTÉO DU JOUR ET DU LENDEMAINS (AMIENS) ---
-            st.markdown("""
+            # --- DÉTERMINATION DU CALCUL ET DE LA COULEUR SELON LES SEUILS VENT ---
+            # Vitesse retenue selon la date choisie (Aujourd'hui vs Demain)
+            is_demain = ("demain" in st.session_state.form_data["date_str"]) or (st.session_state.form_data["date_str"] != datetime.date.today().strftime("%d/%m/%Y"))
+            vitesse_vent = st.session_state.form_data["vent_vitesse_demain"] if is_demain else st.session_state.form_data["vent_vitesse_aujourdhui"]
+
+            if vitesse_vent < 30:
+                badge_bg = "#dcfce7"
+                badge_border = "#22c55e"
+                badge_color = "#166534"
+                badge_status = "🟢 <b>Vigilance Vent : Conforme (< 30 km/h)</b>"
+                badge_msg = "Conditions favorables pour travaux en hauteur, grutage et nacelles."
+            elif 30 <= vitesse_vent < 36:
+                badge_bg = "#ffedd5"
+                badge_border = "#f97316"
+                badge_color = "#9a3412"
+                badge_status = "🟠 <b>Vigilance Vent : Vigilance Absolue (30 à 35 km/h)</b>"
+                badge_msg = "Surveillance continue requise. Anémomètre obligatoire sur zone."
+            else: # >= 36
+                badge_bg = "#fee2e2"
+                badge_border = "#ef4444"
+                badge_color = "#991b1b"
+                badge_status = "🔴 <b>Vigilance Vent : SEUIL ATTEINT (>= 36 km/h)</b>"
+                badge_msg = "INTERDICTION / ARRÊT IMMÉDIAT des travaux en hauteur, grutage et nacelles."
+
+            # --- WIDGET MÉTÉO COMPORTANT LA MISA A LA LIGNE ET LE BADGE DYNAMIQUE ---
+            st.markdown(f"""
             <div class="weather-card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div>
-                        <h4 style="margin:0; color:#0369a1;">🌤️ Météo & Conditions Intervention — Site d'Amiens</h4>
-                        <p style="margin:2px 0 0 0; font-size:0.9rem;">
-                            <b>Aujourd'hui :</b> 16°C — Nuageux / Vent 14 km/h (Incrochable) | <b>Demain :</b> 18°C — Ensoleillé / Vent 9 km/h
+                        <h4 style="margin:0 0 6px 0; color:#0369a1;">🌤️ Météo & Conditions Intervention — Site d'Amiens</h4>
+                        <p style="margin:0; font-size:0.95rem; line-height: 1.5;">
+                            <b>Aujourd'hui :</b> 16°C — Nuageux | Vent : {st.session_state.form_data['vent_vitesse_aujourdhui']} km/h<br>
+                            <b>Demain :</b> 18°C — Ensoleillé | Vent : {st.session_state.form_data['vent_vitesse_demain']} km/h
                         </p>
                     </div>
-                    <div style="text-align:right; font-size:0.85rem; background:white; padding:6px 12px; border-radius:6px; border:1px solid #7dd3fc;">
-                        🟢 <b>Vigilance Vent : Conforme</b> (< 45 km/h pour Grutage / Nacelle)
+                    <div style="text-align:right; font-size:0.85rem; background:{badge_bg}; color:{badge_color}; padding:10px 14px; border-radius:8px; border:2px solid {badge_border}; font-weight:bold;">
+                        {badge_status}<br>
+                        <span style="font-size:0.78rem; font-weight:normal;">{badge_msg}</span>
                     </div>
                 </div>
             </div>
