@@ -15,10 +15,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Style CSS P&G avec fond d'application très clair pour maximiser le contraste des champs
+# Style CSS P&G avec fond d'application très clair et barre de progression visuelle
 st.markdown("""
 <style>
-    /* Fond principal fortement éclairci pour faire ressortir les encarts de saisie */
+    /* Fond principal fortement éclairci pour maximiser le contraste */
     .stApp { background-color: #f8fafc !important; }
     .main { background-color: #f8fafc; }
 
@@ -30,10 +30,6 @@ st.markdown("""
     .welcome-card {
         background: white; border: 1px solid #cbd5e1; padding: 30px; border-radius: 12px;
         text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px;
-    }
-    .stepper-bar {
-        background: white; border: 1px solid #cbd5e1; padding: 12px; border-radius: 10px;
-        margin-bottom: 20px; text-align: center; font-weight: bold;
     }
     .weather-card {
         background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
@@ -52,7 +48,7 @@ st.markdown("""
     }
     .stButton>button { border-radius: 8px; font-weight: bold; }
 
-    /* MISE EN VALEUR ET CONTRASTE DES ENCARTS DE SAISIE ET TEXTE LIBRE */
+    /* ENCARTS DE SAISIE ET TEXTE LIBRE BIEN CONTRASTÉS */
     div[data-baseweb="input"] {
         background-color: #e0f2fe !important;
         border: 1.5px solid #0284c7 !important;
@@ -66,6 +62,75 @@ st.markdown("""
         background-color: #e0f2fe !important;
         border: 1.5px solid #0284c7 !important;
         border-radius: 8px !important;
+    }
+
+    /* BARRE DE PROGRESSION & STEPPER DYNAMIQUE */
+    .stepper-container {
+        background: white;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        padding: 18px 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+    .progress-track {
+        background-color: #e2e8f0;
+        height: 6px;
+        border-radius: 3px;
+        position: relative;
+        margin-bottom: 15px;
+        overflow: hidden;
+    }
+    .progress-fill {
+        background-color: #10b981;
+        height: 100%;
+        transition: width 0.4s ease-in-out;
+    }
+    .steps-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .step-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #64748b;
+        text-align: center;
+    }
+    .step-badge {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        font-weight: bold;
+        margin-bottom: 6px;
+    }
+    .step-completed .step-badge {
+        background-color: #10b981;
+        color: white;
+    }
+    .step-completed {
+        color: #059669;
+    }
+    .step-active .step-badge {
+        background-color: #003366;
+        color: white;
+        box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.2);
+    }
+    .step-active {
+        color: #003366;
+        font-weight: bold;
+    }
+    .step-upcoming .step-badge {
+        background-color: #cbd5e1;
+        color: #475569;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -141,13 +206,13 @@ db_materiaux = ["Acier / Carbone", "Inox 316L / 304L", "Aluminium", "Béton / Ma
 db_disques_blanchiment = ["Disque fibre abrasif", "Brosse métallique torsadée", "Disque à décapant synthétique (Clean & Strip)", "Disque semi-flexible"]
 
 etapes_noms = [
-    "1. Date & Entreprise", 
-    "2. PDP & MoP", 
-    "3. Responsable N2", 
-    "4. Zone & Urgences", 
-    "5. Check-list & EPIs", 
-    "6. Formulaires Spécifiques", 
-    "7. Synthèse & Signatures"
+    "Date & Entreprise", 
+    "PDP & MoP", 
+    "Responsable N2", 
+    "Zone & Urgences", 
+    "Check-list & EPIs", 
+    "Formulaires Spécifiques", 
+    "Synthèse & Signatures"
 ]
 
 # Initialisation BDD Permis
@@ -463,15 +528,42 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
     elif st.session_state.kiosk_mode == "PERMIS":
 
         current_step = st.session_state.step
-        stepper_html = "<div class='stepper-bar'>"
+        total_steps = len(etapes_noms)
+        progress_pct = int(((current_step - 1) / (total_steps - 1)) * 100)
+
+        # Génération du composant HTML de la barre de progression
+        stepper_html = f"""
+        <div class="stepper-container">
+            <div class="progress-track">
+                <div class="progress-fill" style="width: {progress_pct}%;"></div>
+            </div>
+            <div class="steps-row">
+        """
+
         for idx, name in enumerate(etapes_noms, 1):
-            if idx == current_step:
-                stepper_html += f"<span style='color:#003366; background:#dbeafe; padding:6px 12px; border-radius:15px; margin:0 4px;'><b>{name}</b></span> "
-            elif idx < current_step:
-                stepper_html += f"<span style='color:#10b981; margin:0 4px;'>✓ {name}</span> "
+            if idx < current_step:
+                stepper_html += f"""
+                <div class="step-item step-completed">
+                    <div class="step-badge">✓</div>
+                    <span>{name}</span>
+                </div>
+                """
+            elif idx == current_step:
+                stepper_html += f"""
+                <div class="step-item step-active">
+                    <div class="step-badge">{idx}</div>
+                    <span>{name}</span>
+                </div>
+                """
             else:
-                stepper_html += f"<span style='color:#94a3b8; margin:0 4px;'>{name}</span> "
-        stepper_html += "</div>"
+                stepper_html += f"""
+                <div class="step-item step-upcoming">
+                    <div class="step-badge">{idx}</div>
+                    <span>{name}</span>
+                </div>
+                """
+
+        stepper_html += "</div></div>"
         st.markdown(stepper_html, unsafe_allow_html=True)
 
         if current_step == 1:
