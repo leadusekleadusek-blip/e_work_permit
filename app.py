@@ -578,14 +578,13 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 st.session_state.form_data["p_hauteur"] = st.checkbox("Travail en hauteur / échafaudage / nacelle ➔ Permis Hauteur", value=st.session_state.form_data["p_hauteur"])
                 st.session_state.form_data["p_toiture"] = st.checkbox("Accès toiture ➔ Permis Accès Toiture", value=st.session_state.form_data["p_toiture"])
                 
-                # RÈGLE MÉTIER AUTOMATIQUE : MEULEUSE COCHÉE ➔ POINT CHAUD / FEU FLAMME AUTOMATIQUE
                 if st.session_state.form_data.get("sta_meuleuse", False):
                     st.session_state.form_data["p_points_chauds"] = True
                     st.session_state.form_data["r_feu_flamme"] = True
                     st.session_state.form_data["r_metaux_chaud"] = True
 
                 st.session_state.form_data["p_points_chauds"] = st.checkbox(
-                    "Génération de points chauds / flamme ➔ Permis Point Chaud" + (" 🔒 (Auto: Meuleuse)" if st.session_state.form_data.get("sta_meuleuse") else ""), 
+                    "Génération de points chauds / flamme ➔ Permis Point Chaud" + (" 🔒 (Automatique : Utilisation de la Meuleuse)" if st.session_state.form_data.get("sta_meuleuse") else ""), 
                     value=st.session_state.form_data["p_points_chauds"]
                 )
                 st.session_state.form_data["p_excavation"] = st.checkbox("Tranchée, BTP, Ouverture de sol ➔ Permis Excavation", value=st.session_state.form_data["p_excavation"])
@@ -621,7 +620,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     meul_check = st.checkbox("Utilisation d'une Meuleuse d'angle ➔ Dérogation Meuleuse", value=st.session_state.form_data["sta_meuleuse"])
                     st.session_state.form_data["sta_meuleuse"] = meul_check
 
-                    # RÈGLE MÉTIER : MEULEUSE COCHÉE ➔ AUTO EPIS (ÉCRAN FACIAL + AUDITIF + GANTS ANTI-COUPURE) + PT CHAUD
                     if meul_check:
                         st.session_state.form_data["p_points_chauds"] = True
                         st.session_state.form_data["r_feu_flamme"] = True
@@ -667,8 +665,8 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             with c_d3:
                 st.caption("**Contacts, Chaleur & Zone**")
                 st.session_state.form_data["r_bords_tranchants"] = st.checkbox("Objets / bords tranchants", value=st.session_state.form_data["r_bords_tranchants"])
-                st.session_state.form_data["r_metaux_chaud"] = st.checkbox("Métaux soudés à chaud ➔ Pt Chaud", value=st.session_state.form_data["r_metaux_chaud"])
-                st.session_state.form_data["r_feu_flamme"] = st.checkbox("Feu / Flamme ➔ Pt Chaud", value=st.session_state.form_data["r_feu_flamme"])
+                st.session_state.form_data["r_metaux_chaud"] = st.checkbox("Métaux soudés à chaud ➔ Point Chaud", value=st.session_state.form_data["r_metaux_chaud"])
+                st.session_state.form_data["r_feu_flamme"] = st.checkbox("Feu / Flamme ➔ Point Chaud", value=st.session_state.form_data["r_feu_flamme"])
                 st.session_state.form_data["r_cables_sol"] = st.checkbox("Gestion des câbles au sol", value=st.session_state.form_data["r_cables_sol"])
 
             st.divider()
@@ -689,7 +687,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
                 st.markdown("**🛡️ Protection Faciale (EN 166B)**")
                 st.session_state.form_data["epi_visiere_idra"] = st.checkbox(
-                    "Visière / Écran facial" + (" 🔒 (Auto: Meuleuse)" if st.session_state.form_data.get("sta_meuleuse") else ""), 
+                    "Visière / Écran facial" + (" 🔒 (Automatique : Meuleuse)" if st.session_state.form_data.get("sta_meuleuse") else ""), 
                     value=st.session_state.form_data["epi_visiere_idra"]
                 )
                 st.session_state.form_data["epi_pare_visage"] = st.checkbox("Lunette + Pare-visage", value=st.session_state.form_data["epi_pare_visage"])
@@ -697,11 +695,11 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             with col_e2:
                 st.markdown("**🪖 Casques (EN 387/A1)**")
                 st.session_state.form_data["epi_casque_jugulaire"] = st.checkbox(
-                    "Avec jugulaire" + (" 🔒 (Obligatoire Hauteur)" if is_travail_hauteur else ""), 
+                    "Avec jugulaire" + (" 🔒 (Obligatoire : Travail en Hauteur)" if is_travail_hauteur else ""), 
                     value=st.session_state.form_data["epi_casque_jugulaire"]
                 )
                 st.session_state.form_data["epi_casque_auditif"] = st.checkbox(
-                    "Avec protection auditive" + (" 🔒 (Auto: Meuleuse)" if st.session_state.form_data.get("sta_meuleuse") else ""), 
+                    "Avec protection auditive" + (" 🔒 (Automatique : Meuleuse)" if st.session_state.form_data.get("sta_meuleuse") else ""), 
                     value=st.session_state.form_data["epi_casque_auditif"]
                 )
 
@@ -712,7 +710,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             with col_e3:
                 st.markdown("**🧤 Gants de Protection**")
                 st.session_state.form_data["epi_gants_coupure"] = st.checkbox(
-                    "Anti-coupures (4543 / 4X43D)" + (" 🔒 (Auto: Meuleuse)" if st.session_state.form_data.get("sta_meuleuse") else ""), 
+                    "Anti-coupures (4543 / 4X43D)" + (" 🔒 (Automatique : Meuleuse)" if st.session_state.form_data.get("sta_meuleuse") else ""), 
                     value=st.session_state.form_data["epi_gants_coupure"]
                 )
                 st.session_state.form_data["epi_gants_manutention"] = st.checkbox("Manutention (Cuir bovin/chèvre)", value=st.session_state.form_data["epi_gants_manutention"])
@@ -806,14 +804,13 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 has_spe = True
                 st.error("⚠️ **DÉROGATION UTILISATION MEULEUSE D'ANGLE — PROTOCOLE SÉCURITÉ P&G**")
                 
-                st.markdown("##### 1. Identification & Opérateurs Habilités PDP")
+                st.markdown("##### 1. Identification & Opérateurs Habilités du Plan de Prévention")
                 c_m0, c_m1, c_m2 = st.columns([2, 2, 2])
                 with c_m0:
-                    st.session_state.form_data["meuleuse_diametre"] = st.selectbox("Diamètre meuleuse :", ["125 mm", "230 mm"], index=0)
+                    st.session_state.form_data["meuleuse_diametre"] = st.selectbox("Diamètre de la meuleuse d'angle :", ["125 mm", "230 mm"], index=0)
                 with c_m1:
-                    # Liste des personnes ayant émargé le PDP
                     st.session_state.form_data["meuleuse_operateurs"] = st.multiselect(
-                        "Personnes habilitées à l'utiliser (Émargement PDP) :",
+                        "Personnes habilitées à utiliser la meuleuse (ayant émargé le Plan de Prévention) :",
                         options=st.session_state.form_data["intervenants"],
                         default=st.session_state.form_data["intervenants"]
                     )
@@ -822,37 +819,37 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
                 c_m3, c_m4, c_m5 = st.columns(3)
                 with c_m3:
-                    st.session_state.form_data["meuleuse_alim"] = st.selectbox("Type d'alimentation :", ["Batterie 18V/54V", "Filaire 230V", "Pneumatique"], index=0)
+                    st.session_state.form_data["meuleuse_alim"] = st.selectbox("Type d'alimentation électrique :", ["Batterie 18V/54V", "Filaire 230V", "Pneumatique"], index=0)
                 with c_m4:
-                    st.session_state.form_data["meuleuse_ref"] = st.text_input("Référence interne / N° Série :", value=st.session_state.form_data["meuleuse_ref"])
+                    st.session_state.form_data["meuleuse_ref"] = st.text_input("Référence interne ou numéro de série :", value=st.session_state.form_data["meuleuse_ref"])
                 with c_m5:
-                    st.session_state.form_data["meuleuse_vitesse"] = st.text_input("Vitesse max meuleuse (tr/min) :", value=st.session_state.form_data["meuleuse_vitesse"])
+                    st.session_state.form_data["meuleuse_vitesse"] = st.text_input("Vitesse maximale de la meuleuse (tr/min) :", value=st.session_state.form_data["meuleuse_vitesse"])
 
-                st.warning("⚠️ **Rappels de Sécurité Obligatoires sur les Disques :**\n"
-                           "- La **vitesse de rotation maximale du disque** doit être STRICTEMENT SUPÉRIEURE à la vitesse de rotation de la meuleuse.\n"
-                           "- Les disques utilisés doivent avoir une **date de validité non dépassée** (vérification gravure sur la bague centrale).")
+                st.warning("⚠️ **Rappels de Sécurité Obligatoires concernant les Disques :**\n"
+                           "- La **vitesse de rotation maximale inscrite sur le disque** doit être STRICTEMENT SUPÉRIEURE à la vitesse de rotation maximale de la meuleuse.\n"
+                           "- Les disques utilisés doivent avoir une **date de validité non dépassée** (vérification systématique de la gravure sur la bague centrale).")
 
-                st.markdown("##### 2. Environnement & Position de l'Opérateur")
+                st.markdown("##### 2. Environnement de Travail & Position de l'Opérateur")
                 ce1, ce2, ce3, ce4 = st.columns(4)
                 with ce1:
-                    st.session_state.form_data["meu_env_plain_pied"] = st.checkbox("De plain-pied", value=st.session_state.form_data["meu_env_plain_pied"])
-                    st.session_state.form_data["meu_env_hauteur"] = st.checkbox("En hauteur", value=st.session_state.form_data["meu_env_hauteur"])
+                    st.session_state.form_data["meu_env_plain_pied"] = st.checkbox("Travail de plain-pied", value=st.session_state.form_data["meu_env_plain_pied"])
+                    st.session_state.form_data["meu_env_hauteur"] = st.checkbox("Travail en hauteur", value=st.session_state.form_data["meu_env_hauteur"])
                 with ce2:
-                    st.session_state.form_data["meu_env_confine"] = st.checkbox("En espace confiné", value=st.session_state.form_data["meu_env_confine"])
-                    st.session_state.form_data["meu_env_excavation"] = st.checkbox("Dans une excavation", value=st.session_state.form_data["meu_env_excavation"])
+                    st.session_state.form_data["meu_env_confine"] = st.checkbox("Utilisation en espace confiné", value=st.session_state.form_data["meu_env_confine"])
+                    st.session_state.form_data["meu_env_excavation"] = st.checkbox("Utilisation dans une excavation", value=st.session_state.form_data["meu_env_excavation"])
                 with ce3:
-                    st.session_state.form_data["meu_env_stable"] = st.checkbox("Position opérateur stable", value=st.session_state.form_data["meu_env_stable"])
-                    st.session_state.form_data["meu_env_maintien_2mains"] = st.checkbox("Permet le maintien à 2 mains", value=st.session_state.form_data["meu_env_maintien_2mains"])
+                    st.session_state.form_data["meu_env_stable"] = st.checkbox("Position de l'opérateur stable", value=st.session_state.form_data["meu_env_stable"])
+                    st.session_state.form_data["meu_env_maintien_2mains"] = st.checkbox("Permet un maintien ferme à 2 mains", value=st.session_state.form_data["meu_env_maintien_2mains"])
                 with ce4:
-                    st.session_state.form_data["meu_env_piece_fixee"] = st.checkbox("Pièce fixée / bridée", value=st.session_state.form_data["meu_env_piece_fixee"])
-                    st.session_state.form_data["meu_env_hors_ligne_tir"] = st.checkbox("Hors ligne de tir", value=st.session_state.form_data["meu_env_hors_ligne_tir"])
+                    st.session_state.form_data["meu_env_piece_fixee"] = st.checkbox("Pièce à travailler fixée ou bridée", value=st.session_state.form_data["meu_env_piece_fixee"])
+                    st.session_state.form_data["meu_env_hors_ligne_tir"] = st.checkbox("Opérateur positionné hors de la ligne de tir", value=st.session_state.form_data["meu_env_hors_ligne_tir"])
 
                 st.session_state.form_data["meu_position_op"] = st.selectbox(
-                    "Position de l'utilisateur durant la tâche :",
-                    ["Debout", "À genoux", "Accroupi", "En hauteur sur plateforme/nacelle", "Accès restreint / Encombré"]
+                    "Position principale de l'opérateur durant l'intervention :",
+                    ["Debout", "À genoux", "Accroupi", "En hauteur sur plateforme sécurisée ou nacelle", "Accès restreint ou encombré"]
                 )
 
-                st.markdown("##### 3. Sélection du ou des types d'utilisation :")
+                st.markdown("##### 3. Sélection du ou des types d'utilisation de la meuleuse :")
                 
                 cm_u1, cm_u2, cm_u3, cm_u4 = st.columns(4)
                 with cm_u1:
@@ -860,51 +857,51 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 with cm_u2:
                     st.session_state.form_data["meuleuse_u_ebavurage"] = st.checkbox("🛠️ **Ébavurage**", value=st.session_state.form_data["meuleuse_u_ebavurage"])
                 with cm_u3:
-                    st.session_state.form_data["meuleuse_u_flap"] = st.checkbox("🌀 **Flap**", value=st.session_state.form_data["meuleuse_u_flap"])
+                    st.session_state.form_data["meuleuse_u_flap"] = st.checkbox("🌀 **Flap (Lamelles)**", value=st.session_state.form_data["meuleuse_u_flap"])
                 with cm_u4:
                     st.session_state.form_data["meuleuse_u_blanchiment"] = st.checkbox("✨ **Blanchiment**", value=st.session_state.form_data["meuleuse_u_blanchiment"])
 
                 if st.session_state.form_data["meuleuse_u_decoupe"]:
-                    st.info("📌 **Détails - DÉCOUPES :**")
+                    st.info("📌 **Détails pour l'activité DÉCOUPES :**")
                     cd1, cd2 = st.columns(2)
                     with cd1:
-                        st.session_state.form_data["meuleuse_mat_decoupe"] = st.selectbox("Matériau à découper :", db_materiaux, key="mat_dec")
+                        st.session_state.form_data["meuleuse_mat_decoupe"] = st.selectbox("Type de matériau à découper :", db_materiaux, key="mat_dec")
                     with cd2:
-                        st.write("• **Type de disque :** Disque à tronçonner fin / Diamant (Assignation auto)")
-                        st.error("🔒 **Protection :** DOUBLE CARTER OBLIGATOIRE sur la meuleuse.")
-                        st.caption("📐 **Angle d'attaque :** Respect strict de l'angle de **90°** avec le matériau.")
+                        st.write("• **Type de disque sélectionné :** Disque à tronçonner fin ou disque diamant (attribution automatique).")
+                        st.error("🔒 **Protection carter :** DOUBLE CARTER OBLIGATOIRE sur la meuleuse d'angle.")
+                        st.caption("📐 **Angle de travail :** Respect strict de l'angle à **90°** par rapport au matériau.")
 
                 if st.session_state.form_data["meuleuse_u_ebavurage"]:
-                    st.info("📌 **Détails - ÉBAVURAGE :**")
+                    st.info("📌 **Détails pour l'activité ÉBAVURAGE :**")
                     ce1_d, ce2_d = st.columns(2)
                     with ce1_d:
-                        st.session_state.form_data["meuleuse_mat_ebavurage"] = st.selectbox("Matériau à ébavurer :", db_materiaux, key="mat_eba")
+                        st.session_state.form_data["meuleuse_mat_ebavurage"] = st.selectbox("Type de matériau à ébavurer :", db_materiaux, key="mat_eba")
                     with ce2_d:
-                        st.write("• **Type de disque :** Disque à ébavurer épais à moyeu déporté (Assignation auto)")
-                        st.warning("🔒 **Protection :** SIMPLE CARTER obligatoire.")
-                        st.caption("📐 **Angle d'attaque :** Respect strict de l'angle de **30° à 40°** avec le matériau.")
+                        st.write("• **Type de disque sélectionné :** Disque à ébavurer épais à moyeu déporté (attribution automatique).")
+                        st.warning("🔒 **Protection carter :** SIMPLE CARTER obligatoire.")
+                        st.caption("📐 **Angle de travail :** Respect strict d'un angle de **30° à 40°** par rapport au matériau.")
 
                 if st.session_state.form_data["meuleuse_u_flap"]:
-                    st.info("📌 **Détails - FLAP :**")
-                    st.write("• **Type de disque :** Disque à lamelles abrasives (Flap)")
-                    st.warning("🔒 **Protection :** SIMPLE CARTER obligatoire.")
-                    st.caption("📐 **Angle d'attaque :** Respect strict de l'angle de **15° à 25°** avec le matériau.")
+                    st.info("📌 **Détails pour l'activité FLAP :**")
+                    st.write("• **Type de disque sélectionné :** Disque à lamelles abrasives (Flap).")
+                    st.warning("🔒 **Protection carter :** SIMPLE CARTER obligatoire.")
+                    st.caption("📐 **Angle de travail :** Respect strict d'un angle de **15° à 25°** par rapport au matériau.")
 
                 if st.session_state.form_data["meuleuse_u_blanchiment"]:
-                    st.info("📌 **Détails - BLANCHIMENT :**")
+                    st.info("📌 **Détails pour l'activité BLANCHIMENT :**")
                     cb1, cb2 = st.columns(2)
                     with cb1:
-                        st.session_state.form_data["meuleuse_disque_blanchiment"] = st.selectbox("Choix du disque de blanchiment :", db_disques_blanchiment)
+                        st.session_state.form_data["meuleuse_disque_blanchiment"] = st.selectbox("Sélection du disque de blanchiment :", db_disques_blanchiment)
                     with cb2:
-                        st.warning("🔒 **Protection :** SIMPLE CARTER obligatoire.")
-                        st.caption("📐 **Positionnement :** Incliné à plat par rapport au matériau.")
+                        st.warning("🔒 **Protection carter :** SIMPLE CARTER obligatoire.")
+                        st.caption("📐 **Positionnement :** Application à plat par rapport au matériau.")
 
                 st.divider()
 
             if st.session_state.form_data["sta_couteau_lame"] or st.session_state.form_data["sta_echelle_escabeau"]:
                 has_spe = True
-                st.warning("⚠️ **DÉROGATION CASQUE ROUGE (Cutter Lame Ouverte / Échelle / Escabeau)**")
-                st.write("- Validation accordée après inspection terrain et absence d'alternative technique.")
+                st.warning("⚠️ **DÉROGATION CASQUE ROUGE (Cutter à Lame Ouverte / Échelle / Escabeau)**")
+                st.write("- Validation accordée après inspection terrain et confirmation de l'absence d'alternative technique.")
 
             if not has_spe:
                 st.success("✅ **Aucun permis spécifique supplémentaire ni dérogation requis pour ce chantier.**")
@@ -925,7 +922,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
         elif current_step == 7:
             st.subheader("7. Synthèse Globale, Téléchargement PDF & Co-signatures Tactiles")
 
-            st.markdown("<div class='status-pending'>⚠️ ENCART TEMPORAIRE : PERMIS EN ATTENTE DE VALIDATION BATCH (07h30)</div>", unsafe_allow_html=True)
+            st.markdown("<div class='status-pending'>⚠️ PERMIS EN ATTENTE DE VALIDATION BATCH (07h30)</div>", unsafe_allow_html=True)
 
             st.write("##### 📊 1. Tableau Récapitulatif : Activités, Risques Identifiés & Moyens de Prévention")
             
@@ -948,18 +945,18 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             
             if st.session_state.form_data["sta_meuleuse"]:
                 util_meu = []
-                if st.session_state.form_data["meuleuse_u_decoupe"]: util_meu.append(f"Découpe ({st.session_state.form_data['meuleuse_mat_decoupe']} - Double carter - 90°)")
-                if st.session_state.form_data["meuleuse_u_ebavurage"]: util_meu.append(f"Ébavurage ({st.session_state.form_data['meuleuse_mat_ebavurage']} - Simple carter - 30-40°)")
-                if st.session_state.form_data["meuleuse_u_flap"]: util_meu.append("Flap (Simple carter - 15-25°)")
-                if st.session_state.form_data["meuleuse_u_blanchiment"]: util_meu.append(f"Blanchiment ({st.session_state.form_data['meuleuse_disque_blanchiment']} - À plat)")
+                if st.session_state.form_data["meuleuse_u_decoupe"]: util_meu.append(f"Découpe ({st.session_state.form_data['meuleuse_mat_decoupe']} - Double carter - Angle 90°)")
+                if st.session_state.form_data["meuleuse_u_ebavurage"]: util_meu.append(f"Ébavurage ({st.session_state.form_data['meuleuse_mat_ebavurage']} - Simple carter - Angle 30-40°)")
+                if st.session_state.form_data["meuleuse_u_flap"]: util_meu.append("Flap (Simple carter - Angle 15-25°)")
+                if st.session_state.form_data["meuleuse_u_blanchiment"]: util_meu.append(f"Blanchiment ({st.session_state.form_data['meuleuse_disque_blanchiment']} - Application à plat)")
                 
                 details_meu_txt = " + ".join(util_meu) if util_meu else "Meulage standard"
-                op_list_str = ", ".join(st.session_state.form_data["meuleuse_operateurs"]) if st.session_state.form_data["meuleuse_operateurs"] else "Opérateurs PDP"
+                op_list_str = ", ".join(st.session_state.form_data["meuleuse_operateurs"]) if st.session_state.form_data["meuleuse_operateurs"] else "Opérateurs Habilités PDP"
                 
                 tableau_data.append({
-                    "activite": f"Meuleuse {st.session_state.form_data['meuleuse_diametre']} ({st.session_state.form_data['meuleuse_marque']})",
-                    "risque": "Projections étincelles / Éclatement disque",
-                    "prevention": f"Habilités: {op_list_str} | {details_meu_txt} | Position: {st.session_state.form_data['meu_position_op']} | Écran facial + Gants 4543 + Casque auditif"
+                    "activite": f"Meuleuse d'angle {st.session_state.form_data['meuleuse_diametre']} ({st.session_state.form_data['meuleuse_marque']})",
+                    "risque": "Projections d'étincelles / Éclatement de disque",
+                    "prevention": f"Opérateurs habilités : {op_list_str} | Utilisation : {details_meu_txt} | Position : {st.session_state.form_data['meu_position_op']} | Protection faciale + Gants anti-coupures + Protection auditive"
                 })
 
             if st.session_state.form_data["p_confine"]:
@@ -967,7 +964,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             if st.session_state.form_data["p_points_chauds"] or st.session_state.form_data["r_feu_flamme"]:
                 tableau_data.append({"activite": "Points Chauds / Soudure", "risque": "Incendie / Brûlures", "prevention": f"{st.session_state.form_data['chaud_extincteur']} + {st.session_state.form_data['chaud_ronde_post']}"})
             if st.session_state.form_data["p_hauteur"] or st.session_state.form_data["sta_echelle_escabeau"]:
-                tableau_data.append({"activite": "Travail en Hauteur / Échelle", "risque": "Chute de hauteur / Chute d'objets", "prevention": f"{st.session_state.form_data['hauteur_harnais']} + Casque Jugulaire"})
+                tableau_data.append({"activite": "Travail en Hauteur / Échelle", "risque": "Chute de hauteur / Chute d'objets", "prevention": f"{st.session_state.form_data['hauteur_ancrage']} + {st.session_state.form_data['hauteur_harnais']} + Casque Jugulaire"})
 
             if not tableau_data:
                 tableau_data.append({"activite": "Travaux Généraux du PDP", "risque": "Risques standards de chantier", "prevention": epis_str_summary})
