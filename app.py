@@ -1,5 +1,6 @@
 import datetime
 import streamlit as st
+import unicodedata
 from fpdf import FPDF
 
 # ---------------------------------------------------------
@@ -225,14 +226,14 @@ if "form_data" not in st.session_state:
         "epi_lunettes_etanches": False,
         "epi_visiere_idra": False,
         "epi_pare_visage": False,
-        "epi_casque_jugulaire": False, # Déterminé par règle métier
+        "epi_casque_jugulaire": False,
         "epi_casque_auditif": False,
         "epi_gants_coupure": True,
         "epi_gants_manutention": False,
         "epi_gants_chimique": False,
         "epi_gants_electrique": False,
         "epi_bouchons_type": "Jetables",
-        "epi_ffp1_ffp2": False, # Non coché d'office selon consigne
+        "epi_ffp1_ffp2": False,
         "epi_3m6000": False,
         "epi_versaflo": False,
         "epi_cartouche_abek": False,
@@ -244,6 +245,22 @@ if "form_data" not in st.session_state:
         "chaud_travaux": "Soudure Chalumeau / Meulage",
         "loto_cadenas": "LOTO-PG-884"
     }
+
+# ---------------------------------------------------------
+# NETTOYAGE DES TEXTES POUR POLICES FPDF (LATIN-1/ASCII)
+# ---------------------------------------------------------
+def sanitize_text(text):
+    if not isinstance(text, str):
+        text = str(text)
+    # Suppression des émojis et caractères Unicode hors Latin-1
+    text = text.replace("🔥", "[Pt Chaud]").replace("🦺", "[Confiné]").replace("🧗", "[Hauteur]").replace("⚡", "[LOTO]")
+    text = text.replace("⚠️", "[!]").replace("✅", "[OK]").replace("🚜", "[Excavation]").replace("🚀", "")
+    
+    # Normalisation NFD pour convertir les é/è/à en caractères compatibles
+    normalized = unicodedata.normalize('NFKD', text)
+    cleaned = ''.join(c for c in normalized if not unicodedata.combining(c))
+    
+    return cleaned.encode('latin-1', 'ignore').decode('latin-1')
 
 # ---------------------------------------------------------
 # MOTEUR DE GÉNÉRATION PDF NATIVE (FPDF)
@@ -258,9 +275,9 @@ def generer_pdf_bytes(permis):
     pdf.rect(10, 10, 190, 22, 'F')
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Helvetica", "B", 14)
-    pdf.text(15, 20, "PROCTER & GAMBLE AMIENS - e-Work Permit")
+    pdf.text(15, 20, sanitize_text("PROCTER & GAMBLE AMIENS - e-Work Permit"))
     pdf.set_font("Helvetica", "", 10)
-    pdf.text(15, 27, f"Ref: {permis['id']} | Date: {permis['date_travaux']} | Heure: {permis['heure']}")
+    pdf.text(15, 27, sanitize_text(f"Ref: {permis['id']} | Date: {permis['date_travaux']} | Heure: {permis['heure']}"))
 
     pdf.set_y(38)
 
@@ -278,42 +295,42 @@ def generer_pdf_bytes(permis):
 
     pdf.rect(10, 38, 190, 10, 'DF')
     pdf.set_font("Helvetica", "B", 11)
-    pdf.text(15, 44.5, status_str)
+    pdf.text(15, 44.5, sanitize_text(status_str))
 
     pdf.set_text_color(0, 0, 0)
     pdf.set_y(54)
 
     # 1. Infos Générales
     pdf.set_font("Helvetica", "B", 11)
-    pdf.cell(0, 6, "1. INFORMATIONS GENERALES & LOCALISATION", 0, 1)
+    pdf.cell(0, 6, sanitize_text("1. INFORMATIONS GENERALES & LOCALISATION"), 0, 1)
     pdf.set_font("Helvetica", "", 9)
-    pdf.cell(0, 5, f"Societe Intervenante: {permis['societe']} | PDP: {permis['pdp']}", 0, 1)
-    pdf.cell(0, 5, f"Mode Operatoire (MoP): {permis.get('mop', 'N/A')}", 0, 1)
-    pdf.cell(0, 5, f"Responsable N2: {permis['n2']} | Secteur: {permis['zone']} ({permis.get('emplacement', '')})", 0, 1)
-    pdf.cell(0, 5, f"Point de Rassemblement (PR): {permis.get('pr')} | Confinement: {permis.get('confinement')}", 0, 1)
-    pdf.cell(0, 5, f"Urgence Secteur: {permis.get('urg')}", 0, 1)
+    pdf.cell(0, 5, sanitize_text(f"Société Intervenante: {permis['societe']} | PDP: {permis['pdp']}"), 0, 1)
+    pdf.cell(0, 5, sanitize_text(f"Mode Opératoire (MoP): {permis.get('mop', 'N/A')}"), 0, 1)
+    pdf.cell(0, 5, sanitize_text(f"Responsable N2: {permis['n2']} | Secteur: {permis['zone']} ({permis.get('emplacement', '')})"), 0, 1)
+    pdf.cell(0, 5, sanitize_text(f"Point de Rassemblement (PR): {permis.get('pr')} | Confinement: {permis.get('confinement')}"), 0, 1)
+    pdf.cell(0, 5, sanitize_text(f"Urgence Secteur: {permis.get('urg')}"), 0, 1)
     pdf.ln(3)
 
     # 2. Tableau Risques
     pdf.set_font("Helvetica", "B", 11)
-    pdf.cell(0, 6, "2. SYNTHESE DES RISQUES ET MOYENS DE PREVENTION", 0, 1)
+    pdf.cell(0, 6, sanitize_text("2. SYNTHESE DES RISQUES ET MOYENS DE PREVENTION"), 0, 1)
     pdf.set_font("Helvetica", "B", 8)
     pdf.set_fill_color(241, 245, 249)
-    pdf.cell(60, 6, "Activite Cochee", 1, 0, 'L', True)
-    pdf.cell(65, 6, "Risque Identifie", 1, 0, 'L', True)
-    pdf.cell(65, 6, "Moyens de Prevention / EPIs", 1, 1, 'L', True)
+    pdf.cell(60, 6, sanitize_text("Activité Cochée"), 1, 0, 'L', True)
+    pdf.cell(65, 6, sanitize_text("Risque Identifié"), 1, 0, 'L', True)
+    pdf.cell(65, 6, sanitize_text("Moyens de Prévention / EPIs"), 1, 1, 'L', True)
 
     pdf.set_font("Helvetica", "", 8)
     risques = permis.get("tableau_risques", [])
     if not risques:
-        pdf.cell(60, 6, "Travaux Generaux PDP", 1, 0)
-        pdf.cell(65, 6, "Risques standards chantier", 1, 0)
-        pdf.cell(65, 6, "EPIs Obligatoires P&G", 1, 1)
+        pdf.cell(60, 6, sanitize_text("Travaux Généraux PDP"), 1, 0)
+        pdf.cell(65, 6, sanitize_text("Risques standards chantier"), 1, 0)
+        pdf.cell(65, 6, sanitize_text("EPIs Obligatoires P&G"), 1, 1)
     else:
         for r in risques:
-            act = str(r.get("activite", ""))[:32]
-            ris = str(r.get("risque", ""))[:36]
-            prev = str(r.get("prevention", ""))[:36]
+            act = sanitize_text(str(r.get("activite", "")))[:32]
+            ris = sanitize_text(str(r.get("risque", "")))[:36]
+            prev = sanitize_text(str(r.get("prevention", "")))[:36]
             pdf.cell(60, 6, act, 1, 0)
             pdf.cell(65, 6, ris, 1, 0)
             pdf.cell(65, 6, prev, 1, 1)
@@ -322,22 +339,23 @@ def generer_pdf_bytes(permis):
 
     # 3. Permis spécifiques
     pdf.set_font("Helvetica", "B", 11)
-    pdf.cell(0, 6, "3. PERMIS SPECIFIQUES ET DEROGATIONS", 0, 1)
+    pdf.cell(0, 6, sanitize_text("3. PERMIS SPECIFIQUES ET DEROGATIONS"), 0, 1)
     pdf.set_font("Helvetica", "", 9)
     spe_all = permis.get('permis_specifiques', []) + permis.get('derogations', [])
     if spe_all:
-        pdf.cell(0, 5, " - " + ", ".join(spe_all), 0, 1)
+        clean_spe = [sanitize_text(s) for s in spe_all]
+        pdf.cell(0, 5, " - " + ", ".join(clean_spe), 0, 1)
     else:
-        pdf.cell(0, 5, " - Aucun permis specifique ou derogation requise", 0, 1)
+        pdf.cell(0, 5, sanitize_text(" - Aucun permis spécifique ou dérogation requise"), 0, 1)
 
     pdf.ln(3)
 
     # 4. Signatures
     pdf.set_font("Helvetica", "B", 11)
-    pdf.cell(0, 6, "4. CO-SIGNATURES TACTILES AUDITEES", 0, 1)
+    pdf.cell(0, 6, sanitize_text("4. CO-SIGNATURES TACTILES AUDITEES"), 0, 1)
     pdf.set_font("Helvetica", "", 8)
     for sign in permis.get("intervenants", []):
-        pdf.cell(0, 5, f" [OK] Signature horodatee sur borne tactile : {sign}", 1, 1)
+        pdf.cell(0, 5, sanitize_text(f" [OK] Signature horodatée sur borne tactile : {sign}"), 1, 1)
 
     return bytes(pdf.output())
 
@@ -591,7 +609,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
                 st.session_state.form_data["sta_echelle_escabeau"] = st.checkbox("Utilisation d'échelle / escabeau / marche-pied ➔ Dérogation Casque Rouge", value=st.session_state.form_data["sta_echelle_escabeau"])
 
-            # --- RÈGLE MÉTIER AUTOMATIQUE : CASQUE AVEC JUGULAIRE ---
+            # RÈGLE MÉTIER AUTOMATIQUE : CASQUE AVEC JUGULAIRE
             is_travail_hauteur = (
                 st.session_state.form_data["p_hauteur"] or 
                 st.session_state.form_data["p_toiture"] or 
@@ -764,10 +782,10 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             c_card1, c_card2 = st.columns(2)
             with c_card1:
                 spe_list = []
-                if st.session_state.form_data["p_points_chauds"]: spe_list.append("🔥 Permis Point Chaud")
-                if st.session_state.form_data["p_confine"]: spe_list.append("🦺 Permis Espace Confiné")
-                if st.session_state.form_data["p_hauteur"]: spe_list.append("🧗 Permis Travail en Hauteur")
-                if st.session_state.form_data["p_consignation_pression"]: spe_list.append("⚡ Permis Consignation LOTO")
+                if st.session_state.form_data["p_points_chauds"]: spe_list.append("Permis Point Chaud")
+                if st.session_state.form_data["p_confine"]: spe_list.append("Permis Espace Confiné")
+                if st.session_state.form_data["p_hauteur"]: spe_list.append("Permis Travail en Hauteur")
+                if st.session_state.form_data["p_consignation_pression"]: spe_list.append("Permis Consignation LOTO")
 
                 if spe_list:
                     for s in spe_list:
@@ -777,9 +795,9 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
             with c_card2:
                 derog_list = []
-                if st.session_state.form_data["sta_meuleuse"]: derog_list.append("⚠️ Dérogation Meuleuse d'angle")
-                if st.session_state.form_data["sta_couteau_lame"]: derog_list.append("⚠️ Dérogation Cutter Lame Ouverte")
-                if st.session_state.form_data["sta_echelle_escabeau"]: derog_list.append("⚠️ Dérogation Échelle / Escabeau")
+                if st.session_state.form_data["sta_meuleuse"]: derog_list.append("Dérogation Meuleuse d'angle")
+                if st.session_state.form_data["sta_couteau_lame"]: derog_list.append("Dérogation Cutter Lame Ouverte")
+                if st.session_state.form_data["sta_echelle_escabeau"]: derog_list.append("Dérogation Échelle / Escabeau")
 
                 if derog_list:
                     for d in derog_list:
