@@ -27,10 +27,32 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Initialisation de la Base de Données Fictive (Session State)
-if "permis_db" not in st_session := st.session_state:
+# ✅ CODE CORRIGÉ :
+if "permis_db" not in st.session_state:
     st.session_state.permis_db = [
         {
+            "id": "PT-2026-0928-01",
+            "societe": "ABYLSEN",
+            "pdp": "PDP-2026-042 (Bâtiment M1)",
+            "n2": "Léa DUSEK",
+            "zone": "Bâtiment M1 - Zone Production",
+            "statut": "EN_ATTENTE_BATCH",
+            "heure": "06:45",
+            "derogation": True,
+            "motif_derog": "Dérogation Meuleuse d'angle"
+        },
+        {
+            "id": "PT-2026-0928-02",
+            "societe": "APAVE",
+            "pdp": "PDP-2026-104 (Tuyauterie)",
+            "n2": "Marc DUPONT",
+            "zone": "Bâtiment M2 - Conditionnement",
+            "statut": "VALIDÉ",
+            "heure": "07:15",
+            "derogation": False,
+            "motif_derog": "Aucune"
+        }
+    ]
             "id": "PT-2026-0928-01",
             "societe": "ABYLSEN",
             "pdp": "PDP-2026-042 (Bâtiment M1)",
