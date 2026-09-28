@@ -540,42 +540,17 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
         # Calcul du pourcentage d'avancement centré sur les puces
         progress_pct = int(((current_step - 1) / (total_steps - 1)) * 100)
 
-        # Génération du composant HTML du stepper
-        stepper_html = f"""
-        <div class="stepper-container">
-            <div class="stepper-wrapper">
-                <div class="progress-track">
-                    <div class="progress-fill" style="width: {progress_pct}%;"></div>
-                </div>
-        """
-
+        # Génération HTML nettoyée (sans retours à la ligne pour éviter le rendu Markdown parasite)
+        steps_items_html = ""
         for idx, name in enumerate(etapes_noms, 1):
             if idx < current_step:
-                stepper_html += f"""
-                <div class="step-item step-completed">
-                    <div class="step-badge">✓</div>
-                    <span>{name}</span>
-                </div>
-                """
+                steps_items_html += f'<div class="step-item step-completed"><div class="step-badge">✓</div><span>{name}</span></div>'
             elif idx == current_step:
-                stepper_html += f"""
-                <div class="step-item step-active">
-                    <div class="step-badge">{idx}</div>
-                    <span>{name}</span>
-                </div>
-                """
+                steps_items_html += f'<div class="step-item step-active"><div class="step-badge">{idx}</div><span>{name}</span></div>'
             else:
-                stepper_html += f"""
-                <div class="step-item step-upcoming">
-                    <div class="step-badge">{idx}</div>
-                    <span>{name}</span>
-                </div>
-                """
+                steps_items_html += f'<div class="step-item step-upcoming"><div class="step-badge">{idx}</div><span>{name}</span></div>'
 
-        stepper_html += """
-            </div>
-        </div>
-        """
+        stepper_html = f'<div class="stepper-container"><div class="stepper-wrapper"><div class="progress-track"><div class="progress-fill" style="width: {progress_pct}%;"></div></div>{steps_items_html}</div></div>'
         st.markdown(stepper_html, unsafe_allow_html=True)
 
         if current_step == 1:
