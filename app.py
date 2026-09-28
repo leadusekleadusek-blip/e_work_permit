@@ -139,8 +139,8 @@ if "permis_db" not in st.session_state:
             "derogations": ["Meuleuse d'angle"],
             "permis_specifiques": [],
             "tableau_risques": [
-                {"activite": "Rénovation Peinture", "risque": "Inhalation solvants / Espace exigu", "prevention": "Masque ABEK + Ventilation"},
-                {"activite": "Découpe supportage", "risque": "Projections étincelles / Bruit", "prevention": "Lunettes EN 166 + Bouchons d'oreilles"}
+                {"activite": "Rénovation Peinture", "risque": "Inhalation solvants / Espace exigu", "prevention": "Cartouche ABEK + Gants EN 374-1/2"},
+                {"activite": "Découpe supportage", "risque": "Projections étincelles / Bruit", "prevention": "Lunettes EN 166 + Bouchons d'oreilles Moulés"}
             ]
         }
     ]
@@ -221,22 +221,30 @@ if "form_data" not in st.session_state:
         "tms_torsion": False,
         "tms_statique": False,
 
-        # EPIs
-        "epi_lunettes_en166": True,
+        # --- EXHAUSTIVITÉ DU RÉFÉRENTIEL EPIS P&G AMIENS ---
+        # Lunettes (EN 166)
+        "epi_lunettes_chantier_visiere": True,
         "epi_lunettes_etanches": False,
+        # Protection faciale (EN 166B)
         "epi_visiere_idra": False,
         "epi_pare_visage": False,
-        "epi_casque_jugulaire": False,
+        # Casques (EN 387/A1)
+        "epi_casque_jugulaire": False, # Auto-coché si hauteur
         "epi_casque_auditif": False,
-        "epi_gants_coupure": True,
-        "epi_gants_manutention": False,
-        "epi_gants_chimique": False,
-        "epi_gants_electrique": False,
-        "epi_bouchons_type": "Jetables",
+        # Gants
+        "epi_gants_coupure": True,     # 4543 / 4X43D
+        "epi_gants_manutention": False, # Cuir bovin / chèvre
+        "epi_gants_chimique": False,   # EN 374-1/2
+        "epi_gants_electrique": False, # EN 60903 isolants / surgants
+        # Bouchons d'oreilles
+        "epi_bouchons_jetables": False,
+        "epi_bouchons_moules": False,
+        # Protections respiratoires
         "epi_ffp1_ffp2": False,
         "epi_3m6000": False,
         "epi_versaflo": False,
-        "epi_cartouche_abek": False,
+        "epi_cartouche_abek": False,    # EN 14387
+        # Autre texte libre
         "epi_autre": "",
 
         # Détails Spécifiques
@@ -252,14 +260,11 @@ if "form_data" not in st.session_state:
 def sanitize_text(text):
     if not isinstance(text, str):
         text = str(text)
-    # Suppression des émojis et caractères Unicode hors Latin-1
     text = text.replace("🔥", "[Pt Chaud]").replace("🦺", "[Confiné]").replace("🧗", "[Hauteur]").replace("⚡", "[LOTO]")
     text = text.replace("⚠️", "[!]").replace("✅", "[OK]").replace("🚜", "[Excavation]").replace("🚀", "")
     
-    # Normalisation NFD pour convertir les é/è/à en caractères compatibles
     normalized = unicodedata.normalize('NFKD', text)
     cleaned = ''.join(c for c in normalized if not unicodedata.combining(c))
-    
     return cleaned.encode('latin-1', 'ignore').decode('latin-1')
 
 # ---------------------------------------------------------
@@ -270,12 +275,12 @@ def generer_pdf_bytes(permis):
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
 
-    # Header
+    # Header P&G
     pdf.set_fill_color(0, 51, 102)
     pdf.rect(10, 10, 190, 22, 'F')
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Helvetica", "B", 14)
-    pdf.text(15, 20, sanitize_text("PROCTER & GAMBLE AMIENS - e-Work Permit"))
+    pdf.text(15, 20, sanitize_text("PROCTER & GAMBLE AMIENS - e-Work Permit System"))
     pdf.set_font("Helvetica", "", 10)
     pdf.text(15, 27, sanitize_text(f"Ref: {permis['id']} | Date: {permis['date_travaux']} | Heure: {permis['heure']}"))
 
@@ -337,7 +342,7 @@ def generer_pdf_bytes(permis):
 
     pdf.ln(3)
 
-    # 3. Permis spécifiques
+    # 3. Permis spécifiques & Dérogations
     pdf.set_font("Helvetica", "B", 11)
     pdf.cell(0, 6, sanitize_text("3. PERMIS SPECIFIQUES ET DEROGATIONS"), 0, 1)
     pdf.set_font("Helvetica", "", 9)
@@ -558,9 +563,9 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.step = 5
                     st.rerun()
 
-        # ÉTAPE 5 : CHECK-LIST INTEGRALE & EPIs (AVEC RÈGLES MÉTIERS AUTOMATIQUES)
+        # ÉTAPE 5 : CHECK-LIST INTEGRALE & EPIs NORMÉS EXHAUSTIFS
         elif current_step == 5:
-            st.subheader("5. Check-list Intégrale, STA, Dangers & EPIs Normés")
+            st.subheader("5. Check-list Intégrale, STA, Dangers & EPIs Normés P&G")
 
             st.error("🚨 **Identification des Risques Principaux ➔ Déclencheurs de Permis Spécifiques (HRT)**")
             c_rp1, c_rp2 = st.columns(2)
@@ -652,31 +657,48 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             *Les chaussures de sécurité montantes, le casque avec jugulaire, les lunettes de sécurité à protection latérale (EN 166), le gilet haute visibilité (sauf pour travaux électriques ou point chaud) et les gants anti-coupure sont OBLIGATOIRES sur le chantier de construction.*
             """)
 
-            st.write("##### 🥽 Équipements de Protection Individuelle (EPIs Normés)")
-            col_e1, col_e2, col_e3 = st.columns(3)
-            with col_e1:
-                st.markdown("**👓 Protection Oculaire**")
-                st.session_state.form_data["epi_lunettes_en166"] = st.checkbox("Lunettes EN 166 (Chantier)", value=st.session_state.form_data["epi_lunettes_en166"])
-                st.session_state.form_data["epi_visiere_idra"] = st.checkbox("Visière Casque IDRA (EN 166B)", value=st.session_state.form_data["epi_visiere_idra"])
+            # --- SECTION EPIS EXHAUSTIVE ET CONFORME AU RÉFÉRENTIEL ---
+            st.write("##### 🥽 Équipements de Protection Individuelle (EPIs Normés P&G)")
 
-                st.markdown("**🪖 Casque de Sécurité**")
-                st.session_state.form_data["epi_casque_jugulaire"] = st.checkbox(
-                    "Casque avec Jugulaire (EN 387/A1)" + (" 🔒 Auto-coché (Travail Hauteur)" if is_travail_hauteur else ""), 
-                    value=st.session_state.form_data["epi_casque_jugulaire"]
-                )
+            col_e1, col_e2, col_e3, col_e4 = st.columns(4)
+
+            with col_e1:
+                st.markdown("**👓 Lunettes (EN 166)**")
+                st.session_state.form_data["epi_lunettes_chantier_visiere"] = st.checkbox("Chantier ou Visière", value=st.session_state.form_data["epi_lunettes_chantier_visiere"])
+                st.session_state.form_data["epi_lunettes_etanches"] = st.checkbox("Étanches", value=st.session_state.form_data["epi_lunettes_etanches"])
+
+                st.markdown("**🛡️ Protection Faciale (EN 166B)**")
+                st.session_state.form_data["epi_visiere_idra"] = st.checkbox("Visière (casque type IDRA)", value=st.session_state.form_data["epi_visiere_idra"])
+                st.session_state.form_data["epi_pare_visage"] = st.checkbox("Lunette + Pare-visage", value=st.session_state.form_data["epi_pare_visage"])
 
             with col_e2:
-                st.markdown("**🧤 Protection des Mains**")
-                st.session_state.form_data["epi_gants_coupure"] = st.checkbox("Gants Anti-coupures (4543 / 4X43D)", value=st.session_state.form_data["epi_gants_coupure"])
-                st.session_state.form_data["epi_gants_chimique"] = st.checkbox("Gants Chimiques (EN 374-1/2)", value=st.session_state.form_data["epi_gants_chimique"])
+                st.markdown("**🪖 Casques (EN 387/A1)**")
+                st.session_state.form_data["epi_casque_jugulaire"] = st.checkbox(
+                    "Avec jugulaire" + (" 🔒 (Obligatoire Hauteur)" if is_travail_hauteur else ""), 
+                    value=st.session_state.form_data["epi_casque_jugulaire"]
+                )
+                st.session_state.form_data["epi_casque_auditif"] = st.checkbox("Avec protection auditive", value=st.session_state.form_data["epi_casque_auditif"])
 
-                st.markdown("**🎧 Protection Auditive**")
-                st.session_state.form_data["epi_bouchons_type"] = st.radio("Bouchons d'oreilles :", ["Non requis", "Jetables", "Moulés sur mesure"], horizontal=True)
+                st.markdown("**🎧 Bouchons d'oreilles**")
+                st.session_state.form_data["epi_bouchons_jetables"] = st.checkbox("Jetables", value=st.session_state.form_data["epi_bouchons_jetables"])
+                st.session_state.form_data["epi_bouchons_moules"] = st.checkbox("Moulés sur mesure", value=st.session_state.form_data["epi_bouchons_moules"])
 
             with col_e3:
-                st.markdown("**🫁 Protection Respiratoire**")
-                st.session_state.form_data["epi_ffp1_ffp2"] = st.checkbox("Masque FFP1 / FFP2", value=st.session_state.form_data["epi_ffp1_ffp2"])
-                st.session_state.form_data["epi_3m6000"] = st.checkbox("Masque demi-face 3M 6000", value=st.session_state.form_data["epi_3m6000"])
+                st.markdown("**🧤 Gants de Protection**")
+                st.session_state.form_data["epi_gants_coupure"] = st.checkbox("Anti-coupures (4543 / 4X43D)", value=st.session_state.form_data["epi_gants_coupure"])
+                st.session_state.form_data["epi_gants_manutention"] = st.checkbox("Manutention (Cuir bovin/chèvre)", value=st.session_state.form_data["epi_gants_manutention"])
+                st.session_state.form_data["epi_gants_chimique"] = st.checkbox("Chimiques (EN 374-1/2)", value=st.session_state.form_data["epi_gants_chimique"])
+                st.session_state.form_data["epi_gants_electrique"] = st.checkbox("Électriques isolants / Surgants (EN 60903)", value=st.session_state.form_data["epi_gants_electrique"])
+
+            with col_e4:
+                st.markdown("**🫁 Protections Respiratoires**")
+                st.session_state.form_data["epi_ffp1_ffp2"] = st.checkbox("FFP1 / FFP2", value=st.session_state.form_data["epi_ffp1_ffp2"])
+                st.session_state.form_data["epi_3m6000"] = st.checkbox("3M 6000", value=st.session_state.form_data["epi_3m6000"])
+                st.session_state.form_data["epi_versaflo"] = st.checkbox("Versaflo", value=st.session_state.form_data["epi_versaflo"])
+                st.session_state.form_data["epi_cartouche_abek"] = st.checkbox("Cartouche ABEK (EN 14387)", value=st.session_state.form_data["epi_cartouche_abek"])
+
+                st.markdown("**➕ Autre EPI Spécifique**")
+                st.session_state.form_data["epi_autre"] = st.text_input("À préciser en texte libre :", value=st.session_state.form_data["epi_autre"])
 
             c_back, c_next = st.columns([1, 1])
             with c_back:
@@ -759,9 +781,23 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
             st.write("##### 📊 1. Tableau Récapitulatif : Activités, Risques Identifiés & Moyens de Prévention")
             
+            # Assemblage dynamique du tableau de synthèse des risques & EPIs sélectionnés
+            epis_list_txt = []
+            if st.session_state.form_data["epi_lunettes_chantier_visiere"]: epis_list_txt.append("Lunettes EN 166")
+            if st.session_state.form_data["epi_visiere_idra"]: epis_list_txt.append("Visière IDRA EN 166B")
+            if st.session_state.form_data["epi_casque_jugulaire"]: epis_list_txt.append("Casque Jugulaire EN 387")
+            if st.session_state.form_data["epi_gants_coupure"]: epis_list_txt.append("Gants Anti-coupure 4543")
+            if st.session_state.form_data["epi_gants_chimique"]: epis_list_txt.append("Gants Chimiques EN 374")
+            if st.session_state.form_data["epi_bouchons_moules"]: epis_list_txt.append("Bouchons Moulés")
+            elif st.session_state.form_data["epi_bouchons_jetables"]: epis_list_txt.append("Bouchons Jetables")
+            if st.session_state.form_data["epi_cartouche_abek"]: epis_list_txt.append("Masque Cartouche ABEK EN 14387")
+            if st.session_state.form_data["epi_ffp1_ffp2"]: epis_list_txt.append("Masque FFP1/FFP2")
+
+            epis_str_summary = ", ".join(epis_list_txt) if epis_list_txt else "EPIs Obligatoires Chantier P&G"
+
             tableau_data = []
             if st.session_state.form_data["sta_prod_chimique"]:
-                tableau_data.append({"activite": "Utilisation Produits Chimiques", "risque": "Inhalation / Contact FDS", "prevention": f"Produits: {st.session_state.form_data['produits_liste']} - Gants EN 374"})
+                tableau_data.append({"activite": "Utilisation Produits Chimiques", "risque": "Inhalation / Contact FDS", "prevention": f"Produits: {st.session_state.form_data['produits_liste']} - {epis_str_summary}"})
             if st.session_state.form_data["sta_meuleuse"]:
                 tableau_data.append({"activite": "Meuleuse d'angle", "risque": "Projections étincelles / Éclatement disque", "prevention": "Visière EN 166B + Gants Anti-coupure 4543 + Carter"})
             if st.session_state.form_data["p_confine"]:
@@ -772,7 +808,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 tableau_data.append({"activite": "Travail en Hauteur / Échelle", "risque": "Chute de hauteur / Chute d'objets", "prevention": "Harnais 2 longes + Casque Jugulaire EN 387"})
 
             if not tableau_data:
-                tableau_data.append({"activite": "Travaux Généraux du PDP", "risque": "Risques standards de chantier", "prevention": "EPIs Obligatoires P&G (Chaussures, Casque jugulaire, Lunettes EN 166, Gants)"})
+                tableau_data.append({"activite": "Travaux Généraux du PDP", "risque": "Risques standards de chantier", "prevention": epis_str_summary})
 
             st.table(tableau_data)
 
