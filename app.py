@@ -1,7 +1,7 @@
 import streamlit as st
 import datetime
 
-# Configuration de la page Streamlit (Largeur industrielle)
+# Configuration de la page Streamlit
 st.set_page_config(
     page_title="P&G e-Work Permit System",
     page_icon="🛡️",
@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Style CSS Industriel P&G (Modern SaaS)
+# Style CSS Industriel P&G
 st.markdown("""
 <style>
     .main { background-color: #f8fafc; }
@@ -27,32 +27,10 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ✅ CODE CORRIGÉ :
+# Initialisation de la Base de Données Fictive (Session State)
 if "permis_db" not in st.session_state:
     st.session_state.permis_db = [
         {
-            "id": "PT-2026-0928-01",
-            "societe": "ABYLSEN",
-            "pdp": "PDP-2026-042 (Bâtiment M1)",
-            "n2": "Léa DUSEK",
-            "zone": "Bâtiment M1 - Zone Production",
-            "statut": "EN_ATTENTE_BATCH",
-            "heure": "06:45",
-            "derogation": True,
-            "motif_derog": "Dérogation Meuleuse d'angle"
-        },
-        {
-            "id": "PT-2026-0928-02",
-            "societe": "APAVE",
-            "pdp": "PDP-2026-104 (Tuyauterie)",
-            "n2": "Marc DUPONT",
-            "zone": "Bâtiment M2 - Conditionnement",
-            "statut": "VALIDÉ",
-            "heure": "07:15",
-            "derogation": False,
-            "motif_derog": "Aucune"
-        }
-    ]
             "id": "PT-2026-0928-01",
             "societe": "ABYLSEN",
             "pdp": "PDP-2026-042 (Bâtiment M1)",
@@ -105,7 +83,6 @@ if role == "🖥️ Borne Kiosk (Intervenant EE)":
 
     st.divider()
 
-    # Démo Effet WOW : Badging RFID
     st.subheader("1. Identification du Responsable N2")
     col_rfid, col_form = st.columns([1, 2])
 
@@ -115,11 +92,11 @@ if role == "🖥️ Borne Kiosk (Intervenant EE)":
             st.session_state.badge_active = True
             st.success("Badge P&G Détecté : Léa DUSEK (ABYLSEN)")
 
-    default_soc = "ABYLSEN" if st.session_state.get("badge_active") else "Sélectionner..."
+    default_soc = "ABYLSEN" if st.session_state.get("badge_active") else "ABYLSEN"
     default_n2 = "Léa DUSEK" if st.session_state.get("badge_active") else ""
 
     with col_form:
-        soc = st.selectbox("Société Intervenante", ["ABYLSEN", "APAVE", "AXIMA", "ENGIE"], index=0 if st.session_state.get("badge_active") else 0)
+        soc = st.selectbox("Société Intervenante", ["ABYLSEN", "APAVE", "AXIMA", "ENGIE"])
         pdp = st.selectbox("Plan de Prévention Rattaché", ["PDP-2026-042 (Bâtiment M1 - Rénovation)", "PDP-2026-089 (Conditionnement)"])
         n2_name = st.text_input("Responsable N2 Qualifié", value=default_n2, placeholder="Scannez votre badge ou saisissez votre nom")
 
@@ -158,7 +135,7 @@ if role == "🖥️ Borne Kiosk (Intervenant EE)":
             "id": f"PT-2026-0928-0{len(st.session_state.permis_db)+1}",
             "societe": soc,
             "pdp": pdp,
-            "n2": n2_name if n2_name else "Inconnu",
+            "n2": n2_name if n2_name else "Léa DUSEK",
             "zone": zone,
             "statut": "EN_ATTENTE_BATCH",
             "heure": datetime.datetime.now().strftime("%H:%M"),
@@ -180,7 +157,6 @@ elif role == "📊 Dashboard Live & Batch 07h30 (DO / HSE)":
     </div>
     """, unsafe_allow_html=True)
 
-    # Indicateurs Métiers (KPIs)
     col_kpi1, col_kpi2, col_kpi3, col_kpi4 = st.columns(4)
     total_permis = len(st.session_state.permis_db)
     en_attente = sum(1 for p in st.session_state.permis_db if p["statut"] == "EN_ATTENTE_BATCH")
@@ -188,16 +164,16 @@ elif role == "📊 Dashboard Live & Batch 07h30 (DO / HSE)":
     derogations = sum(1 for p in st.session_state.permis_db if p["derogation"])
 
     col_kpi1.metric("Chantiers Totaux", total_permis)
-    col_kpi2.metric("En Attente Batch (07h30)", en_attente, delta_color="inverse")
+    col_kpi2.metric("En Attente Batch (07h30)", en_attente)
     col_kpi3.metric("Permis Validés Actifs", valides)
-    col_kpi4.metric("Dérogations Casque Rouge", derogations, delta="-1 Critique" if derogations > 0 else "Normal")
+    col_kpi4.metric("Dérogations Casque Rouge", derogations)
 
     st.divider()
 
     st.subheader("⚡ Validation Globale de la Fournée du Matin (07h30)")
     col_batch_text, col_batch_btn = st.columns([3, 1])
     with col_batch_text:
-        st.write("Le script serveur exécute le traitement automatique chaque matin à 07h30. En tant que DO, vous pouvez valider la fournée des chantiers de votre secteur en un clic.")
+        st.write("Le traitement serveur s'exécute automatiquement chaque matin à 07h30. En tant que DO, vous pouvez valider la fournée des chantiers de votre secteur en un seul clic.")
     with col_batch_btn:
         if st.button("✅ VALIDER TOUT LE BATCH (07h30)", type="primary"):
             for p in st.session_state.permis_db:
