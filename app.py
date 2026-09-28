@@ -1,5 +1,6 @@
 import datetime
 import streamlit as st
+import io
 
 # ---------------------------------------------------------
 # CONFIGURATION DE LA PAGE STREAMLIT
@@ -33,8 +34,15 @@ st.markdown("""
         background: white; border: 1px solid #cbd5e1; padding: 12px; border-radius: 10px;
         margin-bottom: 20px; text-align: center; font-weight: bold;
     }
-    .epi-box {
-        background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 10px;
+    .status-pending {
+        background-color: #fef08a; color: #854d0e; border: 2px solid #eab308;
+        padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.1rem;
+        margin-bottom: 15px;
+    }
+    .status-validated {
+        background-color: #dcfce7; color: #166534; border: 2px solid #22c55e;
+        padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.1rem;
+        margin-bottom: 15px;
     }
     .stButton>button {
         border-radius: 8px; font-weight: bold;
@@ -106,7 +114,7 @@ etapes_noms = [
     "4. Zone & Urgences", 
     "5. Check-list & EPIs", 
     "6. Formulaires Spécifiques", 
-    "7. Signatures"
+    "7. Synthèse & Signatures"
 ]
 
 # Initialisation BDD Permis
@@ -128,7 +136,11 @@ if "permis_db" not in st.session_state:
             "heure": "06:45",
             "intervenants": ["Léa DUSEK (N2)", "Matthieu MARTIN (N1)"],
             "derogations": ["Meuleuse d'angle"],
-            "permis_specifiques": []
+            "permis_specifiques": [],
+            "tableau_risques": [
+                {"activite": "Rénovation Peinture", "risque": "Inhalation solvants / Espace exigu", "prevention": "Masque FFP2 / ABEK + Ventilation"},
+                {"activite": "Découpe supportage", "risque": "Projections étincelles / Bruit", "prevention": "Lunettes EN 166 + Bouchons d'oreilles"}
+            ]
         }
     ]
 
@@ -138,7 +150,7 @@ if "kiosk_mode" not in st.session_state:
 if "step" not in st.session_state:
     st.session_state.step = 1
 
-# Initialisation de la structure complète du formulaire
+# Initialisation des données de formulaire
 if "form_data" not in st.session_state:
     st.session_state.form_data = {
         "date_str": datetime.date.today().strftime("%d/%m/%Y"),
@@ -151,7 +163,7 @@ if "form_data" not in st.session_state:
         "description": "Peinture mur nord bureau 104",
         "intervenants": ["Léa DUSEK"],
         
-        # --- DÉCLENCHEURS PERMIS SPÉCIFIQUES ---
+        # Permis Spécifiques
         "p_hauteur": False,
         "p_toiture": False,
         "p_points_chauds": False,
@@ -166,7 +178,7 @@ if "form_data" not in st.session_state:
         "p_chimique": False,
         "p_demolition": False,
 
-        # --- STA & OUTILS ---
+        # STA & Outils
         "sta_prod_chimique": False,
         "produits_liste": "",
         "sta_dta": False,
@@ -178,7 +190,7 @@ if "form_data" not in st.session_state:
         "sta_couteau_lame": False,
         "sta_echelle_escabeau": False,
 
-        # --- ÉVALUATION DES RISQUES ---
+        # Dangers & Risques
         "r_exigu": False,
         "r_superpose": False,
         "r_inconfortable": False,
@@ -202,13 +214,13 @@ if "form_data" not in st.session_state:
         "r_voies_circulation": False,
         "r_stockage_defini": True,
 
-        # --- EFFORTS (TMS) ---
+        # TMS
         "tms_lourd": False,
         "tms_repetitif": False,
         "tms_torsion": False,
         "tms_statique": False,
 
-        # --- EPIs INTERACTIFS ---
+        # EPIs
         "epi_lunettes_en166": True,
         "epi_lunettes_etanches": False,
         "epi_visiere_idra": False,
@@ -219,8 +231,6 @@ if "form_data" not in st.session_state:
         "epi_gants_manutention": False,
         "epi_gants_chimique": False,
         "epi_gants_electrique": False,
-        "epi_bouchons_jetables": False,
-        "epi_bouchons_moules": False,
         "epi_bouchons_type": "Jetables",
         "epi_ffp1_ffp2": True,
         "epi_3m6000": False,
@@ -228,7 +238,7 @@ if "form_data" not in st.session_state:
         "epi_cartouche_abek": False,
         "epi_autre": "",
 
-        # Détails Permis Spécifiques
+        # Détails Spécifiques
         "confine_o2": "20.9 %",
         "confine_vigie": "Matthieu MARTIN",
         "chaud_travaux": "Soudure Chalumeau / Meulage",
@@ -250,6 +260,39 @@ role = st.sidebar.radio(
         "📱 Inspection Terrain QR Code (Casque Rouge)"
     ]
 )
+
+# Fonction Génération Fichier PDF Texte/Récapitulatif
+def generer_contenu_pdf(permis):
+    st_text = f"=== PROCTER & GAMBLE AMIENS - PERMIS DE TRAVAIL OFFICIEL ===\n"
+    st_text += f"REF PERMIS : {permis['id']} | DATE : {permis['date_travaux']}\n"
+    st_text += f"STATUT : {'VALIDÉ' if permis['statut'] == 'VALIDÉ' else 'PERMIS EN ATTENTE DE VALIDATION'}\n"
+    st_text += f"-----------------------------------------------------------\n"
+    st_text += f"ENTREPRISE : {permis['societe']} | PDP : {permis['pdp']}\n"
+    st_text += f"MODE OPÉRATOIRE : {permis.get('mop', 'MoP Standard')}\n"
+    st_text += f"RESPONSABLE N2 : {permis['n2']}\n"
+    st_text += f"LOCALISATION : {permis['zone']} ({permis.get('emplacement', 'N/A')})\n"
+    st_text += f"POINT DE RASSEMBLEMENT : {permis.get('pr')} | CONFINEMENT : {permis.get('confinement')}\n"
+    st_text += f"POSTE URGENCE SECTEUR : {permis.get('urg')}\n"
+    st_text += f"-----------------------------------------------------------\n"
+    st_text += f"INTERVENANTS SIGNATAIRES :\n"
+    for sign in permis.get('intervenants', []):
+        st_text += f" - {sign} [Signature Tactile Horodatée]\n"
+    st_text += f"-----------------------------------------------------------\n"
+    st_text += f"PERMIS SPÉCIFIQUES & DÉROGATIONS :\n"
+    spe_all = permis.get('permis_specifiques', []) + permis.get('derogations', [])
+    if spe_all:
+        for s in spe_all:
+            st_text += f" - [!] {s}\n"
+    else:
+        st_text += " - Aucun permis spécifique requis\n"
+    st_text += f"-----------------------------------------------------------\n"
+    st_text += f"VALIDATIONS ET APPROBATIONS :\n"
+    if permis['statut'] == 'VALIDÉ':
+        st_text += f" [OK] VALIDATION BATCH DONNEUR D'ORDRE (DO) : Validé à 07h30\n"
+        st_text += f" [OK] VALIDATION EHS / CASQUE ROUGE : Conforme sur zone\n"
+    else:
+        st_text += f" [PENDING] VALIDATION BATCH DONNEUR D'ORDRE (DO) : En attente du batch 07h30\n"
+    return st_text.encode('utf-8')
 
 # ==============================================================================
 # INTERFACE 1 : BORNE KIOSK TACTILE (EE / N2)
@@ -434,13 +477,10 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.step = 5
                     st.rerun()
 
-        # =====================================================
         # ÉTAPE 5 : CHECK-LIST INTEGRALE & EPIs
-        # =====================================================
         elif current_step == 5:
             st.subheader("5. Check-list Intégrale, STA, Dangers & EPIs Normés")
 
-            # --- SECTION A : DÉCLENCHEURS PERMIS SPÉCIFIQUES ---
             st.error("🚨 **Identification des Risques Principaux ➔ Déclencheurs de Permis Spécifiques (HRT)**")
             c_rp1, c_rp2 = st.columns(2)
             with c_rp1:
@@ -462,14 +502,13 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
             st.divider()
 
-            # --- SECTION B : STA & OUTILLAGE ---
             st.info("📋 **Analyse STA & Spécificités Outillage**")
             c_s1, c_s2 = st.columns(2)
 
             with c_s1:
                 st.session_state.form_data["sta_prod_chimique"] = st.checkbox("Utilisation de Produits Chimiques dans le MoP / FDS", value=st.session_state.form_data["sta_prod_chimique"])
                 if st.session_state.form_data["sta_prod_chimique"]:
-                    st.session_state.form_data["produits_liste"] = st.text_input("Saisir les produits chimiques utilisés (Validation Casque Rouge) :", value=st.session_state.form_data["produits_liste"], placeholder="ex: Solvant, Acétone, Colle PU...")
+                    st.session_state.form_data["produits_liste"] = st.text_input("Saisir les produits chimiques utilisés :", value=st.session_state.form_data["produits_liste"], placeholder="ex: Solvant, Acétone, Colle PU...")
 
                 st.session_state.form_data["sta_dta"] = st.checkbox("Consultation DTA (Dossier Technique Amiante) effectuée", value=st.session_state.form_data["sta_dta"])
                 st.session_state.form_data["sta_pirl_nacelle"] = st.checkbox("Utilisation Gazelle (PIRL) ou Nacelle", value=st.session_state.form_data["sta_pirl_nacelle"])
@@ -485,15 +524,13 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
                 st.session_state.form_data["sta_couteau_lame"] = st.checkbox("Utilisation de couteau / lame ouverte ➔ Dérogation Casque Rouge", value=st.session_state.form_data["sta_couteau_lame"])
                 if st.session_state.form_data["sta_couteau_lame"]:
-                    st.session_state.form_data["r_bords_tranchants"] = True # Règle métier automatique
+                    st.session_state.form_data["r_bords_tranchants"] = True
 
                 st.session_state.form_data["sta_echelle_escabeau"] = st.checkbox("Utilisation d'échelle / escabeau / marche-pied ➔ Dérogation Casque Rouge", value=st.session_state.form_data["sta_echelle_escabeau"])
 
             st.divider()
 
-            # --- SECTION C : GRILLE D'ÉVALUATION DES RISQUES & DANGERS ---
             st.write("##### ⚠️ Liste de Contrôle & Évaluation des Dangers Potentiels")
-            
             c_d1, c_d2, c_d3 = st.columns(3)
             with c_d1:
                 st.caption("**Conditions de travail & Exposition**")
@@ -502,8 +539,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 st.session_state.form_data["r_inconfortable"] = st.checkbox("Position inconfortable (TMS)", value=st.session_state.form_data["r_inconfortable"])
                 st.session_state.form_data["r_fumee_poussiere"] = st.checkbox("Fumée / Poussière", value=st.session_state.form_data["r_fumee_poussiere"])
                 st.session_state.form_data["r_bruit_80db"] = st.checkbox("Bruit > 80 dB", value=st.session_state.form_data["r_bruit_80db"])
-                st.session_state.form_data["r_rayonnement"] = st.checkbox("Rayonnement", value=st.session_state.form_data["r_rayonnement"])
-                st.session_state.form_data["r_enzymes"] = st.checkbox("Exposition Enzymes", value=st.session_state.form_data["r_enzymes"])
 
             with c_d2:
                 st.caption("**Chocs, Heurts & Glissades**")
@@ -511,55 +546,35 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 st.session_state.form_data["r_chute_objets"] = st.checkbox("Chute d'objets", value=st.session_state.form_data["r_chute_objets"])
                 st.session_state.form_data["r_vehicule"] = st.checkbox("Véhicule / Chariot en mouvement", value=st.session_state.form_data["r_vehicule"])
                 st.session_state.form_data["r_escalier"] = st.checkbox("Présence d'escalier", value=st.session_state.form_data["r_escalier"])
-                st.session_state.form_data["r_liquide_sol"] = st.checkbox("Présence de liquide au sol", value=st.session_state.form_data["r_liquide_sol"])
-                st.session_state.form_data["r_ouverture_sol"] = st.checkbox("Ouverture au sol / Trémie", value=st.session_state.form_data["r_ouverture_sol"])
-                st.session_state.form_data["r_stockage_sol"] = st.checkbox("Stockage au sol", value=st.session_state.form_data["r_stockage_sol"])
 
             with c_d3:
                 st.caption("**Contacts, Chaleur & Zone**")
                 st.session_state.form_data["r_bords_tranchants"] = st.checkbox("Objets / bords tranchants", value=st.session_state.form_data["r_bords_tranchants"])
-                st.session_state.form_data["r_perforation"] = st.checkbox("Risque de perforation", value=st.session_state.form_data["r_perforation"])
                 st.session_state.form_data["r_metaux_chaud"] = st.checkbox("Métaux soudés à chaud ➔ Pt Chaud", value=st.session_state.form_data["r_metaux_chaud"])
-                st.session_state.form_data["r_metaux_froid"] = st.checkbox("Métaux soudés à froid (brûlures)", value=st.session_state.form_data["r_metaux_froid"])
                 st.session_state.form_data["r_feu_flamme"] = st.checkbox("Feu / Flamme ➔ Pt Chaud", value=st.session_state.form_data["r_feu_flamme"])
                 st.session_state.form_data["r_cables_sol"] = st.checkbox("Gestion des câbles au sol", value=st.session_state.form_data["r_cables_sol"])
-                st.session_state.form_data["r_voies_circulation"] = st.checkbox("Voies de circulation gérées", value=st.session_state.form_data["r_voies_circulation"])
-
-            st.write("##### 🦾 Efforts Physiques & Ergonomie (TMS)")
-            c_tms1, c_tms2, c_tms3, c_tms4 = st.columns(4)
-            with c_tms1: st.session_state.form_data["tms_lourd"] = st.checkbox("Soulever outils/matériaux lourds", value=st.session_state.form_data["tms_lourd"])
-            with c_tms2: st.session_state.form_data["tms_repetitif"] = st.checkbox("Mouvements répétitifs", value=st.session_state.form_data["tms_repetitif"])
-            with c_tms3: st.session_state.form_data["tms_torsion"] = st.checkbox("Outils de torsion", value=st.session_state.form_data["tms_torsion"])
-            with c_tms4: st.session_state.form_data["tms_statique"] = st.checkbox("Positions statiques prolongées", value=st.session_state.form_data["tms_statique"])
 
             st.divider()
 
-            # --- SECTION D : MATRICE EPIS NORMÉE ---
             st.warning("""
             📢 **Consigne Sécurité Chantier P&G Amiens :**  
             *Les chaussures de sécurité montantes, le casque avec jugulaire, les lunettes de sécurité à protection latérale (EN 166), le gilet haute visibilité (sauf pour travaux électriques ou point chaud) et les gants anti-coupure sont OBLIGATOIRES sur le chantier de construction.*
             """)
 
             st.write("##### 🥽 Équipements de Protection Individuelle (EPIs Normés)")
-
             col_e1, col_e2, col_e3 = st.columns(3)
             with col_e1:
-                st.markdown("**👓 Protection Oculaire (Lunettes / Visière)**")
+                st.markdown("**👓 Protection Oculaire**")
                 st.session_state.form_data["epi_lunettes_en166"] = st.checkbox("Lunettes EN 166 (Chantier)", value=st.session_state.form_data["epi_lunettes_en166"])
-                st.session_state.form_data["epi_lunettes_etanches"] = st.checkbox("Lunettes étanches EN 166", value=st.session_state.form_data["epi_lunettes_etanches"])
                 st.session_state.form_data["epi_visiere_idra"] = st.checkbox("Visière Casque IDRA (EN 166B)", value=st.session_state.form_data["epi_visiere_idra"])
-                st.session_state.form_data["epi_pare_visage"] = st.checkbox("Lunette + Pare-visage (EN 166B)", value=st.session_state.form_data["epi_pare_visage"])
 
                 st.markdown("**🪖 Casque de Sécurité**")
                 st.session_state.form_data["epi_casque_jugulaire"] = st.checkbox("Casque avec Jugulaire (EN 387/A1)", value=st.session_state.form_data["epi_casque_jugulaire"])
-                st.session_state.form_data["epi_casque_auditif"] = st.checkbox("Casque avec protection auditive intégrée", value=st.session_state.form_data["epi_casque_auditif"])
 
             with col_e2:
-                st.markdown("**🧤 Protection des Mains (Gants)**")
+                st.markdown("**🧤 Protection des Mains**")
                 st.session_state.form_data["epi_gants_coupure"] = st.checkbox("Gants Anti-coupures (4543 / 4X43D)", value=st.session_state.form_data["epi_gants_coupure"])
-                st.session_state.form_data["epi_gants_manutention"] = st.checkbox("Gants Manutention Cuir (Bovin/Chèvre)", value=st.session_state.form_data["epi_gants_manutention"])
                 st.session_state.form_data["epi_gants_chimique"] = st.checkbox("Gants Chimiques (EN 374-1/2)", value=st.session_state.form_data["epi_gants_chimique"])
-                st.session_state.form_data["epi_gants_electrique"] = st.checkbox("Gants Électriques isolants (EN 60903)", value=st.session_state.form_data["epi_gants_electrique"])
 
                 st.markdown("**🎧 Protection Auditive**")
                 st.session_state.form_data["epi_bouchons_type"] = st.radio("Bouchons d'oreilles :", ["Non requis", "Jetables", "Moulés sur mesure"], horizontal=True)
@@ -568,11 +583,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 st.markdown("**🫁 Protection Respiratoire**")
                 st.session_state.form_data["epi_ffp1_ffp2"] = st.checkbox("Masque FFP1 / FFP2", value=st.session_state.form_data["epi_ffp1_ffp2"])
                 st.session_state.form_data["epi_3m6000"] = st.checkbox("Masque demi-face 3M 6000", value=st.session_state.form_data["epi_3m6000"])
-                st.session_state.form_data["epi_versaflo"] = st.checkbox("Système à assistance respiratoire Versaflo", value=st.session_state.form_data["epi_versaflo"])
-                st.session_state.form_data["epi_cartouche_abek"] = st.checkbox("Cartouche ABEK EN 14387", value=st.session_state.form_data["epi_cartouche_abek"])
-
-                st.markdown("**➕ Autre EPI Spécifique**")
-                st.session_state.form_data["epi_autre"] = st.text_input("Préciser si autre EPI :", value=st.session_state.form_data["epi_autre"])
 
             c_back, c_next = st.columns([1, 1])
             with c_back:
@@ -584,52 +594,27 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.step = 6
                     st.rerun()
 
-        # =====================================================
         # ÉTAPE 6 : PERMIS & DÉROGATIONS SPÉCIFIQUES DÉCLENCHÉS
-        # =====================================================
         elif current_step == 6:
             st.subheader("6. Permis Spécifiques (HRT) & Dérogations Générés")
 
-            has_spe = False
-
             if st.session_state.form_data["p_confine"]:
-                has_spe = True
                 st.info("🦺 **PERMIS ESPACE CONFINÉ (CBA 105)**")
                 c_c1, c_c2 = st.columns(2)
-                with c_c1:
-                    st.session_state.form_data["confine_o2"] = st.text_input("Taux O2 mesuré :", value=st.session_state.form_data["confine_o2"])
-                with c_c2:
-                    st.session_state.form_data["confine_vigie"] = st.text_input("Nom de la Vigie Extérieure :", value=st.session_state.form_data["confine_vigie"])
+                with c_c1: st.session_state.form_data["confine_o2"] = st.text_input("Taux O2 mesuré :", value=st.session_state.form_data["confine_o2"])
+                with c_c2: st.session_state.form_data["confine_vigie"] = st.text_input("Nom de la Vigie Extérieure :", value=st.session_state.form_data["confine_vigie"])
 
             if st.session_state.form_data["p_points_chauds"] or st.session_state.form_data["r_feu_flamme"] or st.session_state.form_data["r_metaux_chaud"]:
-                has_spe = True
                 st.warning("🔥 **PERMIS POINTS CHAUDS / SOUDURE**")
                 st.session_state.form_data["chaud_travaux"] = st.text_input("Nature des travaux de chauffe :", value=st.session_state.form_data["chaud_travaux"])
 
-            if st.session_state.form_data["p_consignation_pression"] or st.session_state.form_data["p_consignation_mecanique"] or st.session_state.form_data["p_consignation_equipement"] or st.session_state.form_data["p_consignation_laser"]:
-                has_spe = True
+            if st.session_state.form_data["p_consignation_pression"] or st.session_state.form_data["p_consignation_mecanique"]:
                 st.success("⚡ **CONSIGNATION / DECONSIGNATION (LOTO)**")
                 st.session_state.form_data["loto_cadenas"] = st.text_input("Numéro de Cadenas LOTO :", value=st.session_state.form_data["loto_cadenas"])
 
-            if st.session_state.form_data["p_hauteur"] or st.session_state.form_data["p_toiture"]:
-                has_spe = True
-                st.error("🧗 **PERMIS TRAVAIL EN HAUTEUR / ACCÈS TOITURE**")
-                st.write("- Point d'ancrage vérifié & Port du harnais 2 longes obligatoire avec absorbeur d'énergie.")
-
             if st.session_state.form_data["sta_meuleuse"]:
-                has_spe = True
                 st.error("⚠️ **DÉROGATION UTILISATION MEULEUSE D'ANGLE**")
                 st.write(f"- **Activité enregistrée :** {st.session_state.form_data['meuleuse_activite']}")
-                if st.session_state.form_data["meuleuse_texte_libre"]:
-                    st.write(f"- **Précision :** {st.session_state.form_data['meuleuse_texte_libre']}")
-
-            if st.session_state.form_data["sta_couteau_lame"] or st.session_state.form_data["sta_echelle_escabeau"]:
-                has_spe = True
-                st.warning("⚠️ **DÉROGATION CASQUE ROUGE (Cutter Lame Ouverte / Échelle / Escabeau)**")
-                st.write("- Validation accordée après inspection et absence d'alternative technique.")
-
-            if not has_spe:
-                st.success("✅ **Aucun permis spécifique supplémentaire ni dérogation requis pour ce chantier.**")
 
             c_back, c_next = st.columns([1, 1])
             with c_back:
@@ -641,51 +626,106 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.step = 7
                     st.rerun()
 
-        # ÉTAPE 7 : INTERVENANTS & SIGNATURES MULTIPLES
+        # =====================================================
+        # ÉTAPE 7 : SYNTHÈSE, PDF & CO-SIGNATURES TACTILES
+        # =====================================================
         elif current_step == 7:
-            st.subheader("7. Liste des Intervenants & Co-signatures Tactiles")
+            st.subheader("7. Synthèse Globale, Visualisation & Co-signatures Tactiles")
 
-            st.write("##### Ajout dynamique des compagnons présents :")
+            # ENCART VISUEL STATUT TEMPORAIRE
+            st.markdown("<div class='status-pending'>⚠️ ENCART TEMPORAIRE : PERMIS EN ATTENTE DE VALIDATION BATCH (07h30)</div>", unsafe_allow_html=True)
+
+            st.write("##### 📊 1. Tableau Récapitulatif : Activités, Risques Identifiés & Moyens de Prévention")
+            
+            # Construction du tableau de synthèse dynamique
+            tableau_data = []
+            if st.session_state.form_data["sta_prod_chimique"]:
+                tableau_data.append({"Activités Cochées": "Utilisation Produits Chimiques", "Risques Identifiés": "Inhalation / Contact FDS", "Moyens de Prévention / EPIs": f"Produits: {st.session_state.form_data['produits_liste']} - Masque FFP2/ABEK + Gants EN 374"})
+            if st.session_state.form_data["sta_meuleuse"]:
+                tableau_data.append({"Activités Cochées": "Meuleuse d'angle", "Risques Identifiés": "Projections étincelles / Éclatement disque", "Moyens de Prévention / EPIs": "Visière EN 166B + Gants Anti-coupure 4543 + Carter"})
+            if st.session_state.form_data["p_confine"]:
+                tableau_data.append({"Activités Cochées": "Espace Confiné (CBA 105)", "Risques Identifiés": "Asphyxie / Anoxie (Azote)", "Moyens de Prévention / EPIs": f"Mesure O2 ({st.session_state.form_data['confine_o2']}) + Vigie ({st.session_state.form_data['confine_vigie']})"})
+            if st.session_state.form_data["p_points_chauds"] or st.session_state.form_data["r_feu_flamme"]:
+                tableau_data.append({"Activités Cochées": "Points Chauds / Soudure", "Risques Identifiés": "Incendie / Brûlures", "Moyens de Prévention / EPIs": "Extincteur sur zone + Ronde sécurité 2h après travaux"})
+            if st.session_state.form_data["p_hauteur"] or st.session_state.form_data["sta_echelle_escabeau"]:
+                tableau_data.append({"Activités Cochées": "Travail en Hauteur / Échelle", "Risques Identifiés": "Chute de hauteur / Chute d'objets", "Moyens de Prévention / EPIs": "Harnais 2 longes + Casque Jugulaire EN 387"})
+
+            if not tableau_data:
+                tableau_data.append({"Activités Cochées": "Travaux Généraux du PDP", "Risques Identifiés": "Risques standards de chantier", "Moyens de Prévention / EPIs": "EPIs Obligatoires P&G (Chaussures, Casque jugulaire, Lunettes EN 166, Gants)"})
+
+            st.table(tableau_data)
+
+            st.divider()
+
+            st.write("##### 🦺 2. Cartes Visuelles des Permis Spécifiques & Rappels des Consignes")
+            
+            c_card1, c_card2 = st.columns(2)
+            with c_card1:
+                spe_list = []
+                if st.session_state.form_data["p_points_chauds"]: spe_list.append("🔥 Permis Point Chaud")
+                if st.session_state.form_data["p_confine"]: spe_list.append("🦺 Permis Espace Confiné")
+                if st.session_state.form_data["p_hauteur"]: spe_list.append("🧗 Permis Travail en Hauteur")
+                if st.session_state.form_data["p_consignation_pression"]: spe_list.append("⚡ Permis Consignation LOTO")
+
+                if spe_list:
+                    for s in spe_list:
+                        st.info(f"**{s}** — Consignes complémentaires validées et actives sur la zone.")
+                else:
+                    st.success("✅ Aucun permis spécifique requis.")
+
+            with c_card2:
+                derog_list = []
+                if st.session_state.form_data["sta_meuleuse"]: derog_list.append("⚠️ Dérogation Meuleuse d'angle")
+                if st.session_state.form_data["sta_couteau_lame"]: derog_list.append("⚠️ Dérogation Cutter Lame Ouverte")
+                if st.session_state.form_data["sta_echelle_escabeau"]: derog_list.append("⚠️ Dérogation Échelle / Escabeau")
+
+                if derog_list:
+                    for d in derog_list:
+                        st.warning(f"**{d}** — Dérogation enregistrée sous contrôle du Responsable N2 et Casque Rouge.")
+                else:
+                    st.success("✅ Aucune dérogation particulière.")
+
+            st.divider()
+
+            st.write("##### ✍️ 3. Co-signatures Tactiles de l'Équipe")
             c_add1, c_add2 = st.columns([3, 1])
             with c_add1:
-                nouveau_nom = st.text_input("Nom & Prénom du compagnon", key="new_compagnon")
+                nouveau_nom = st.text_input("Ajouter un compagnon à la liste des signataires :", key="new_compagnon")
             with c_add2:
                 st.write("")
                 st.write("")
-                if st.button("+ Ajouter"):
+                if st.button("+ Ajouter Signataire"):
                     if nouveau_nom and nouveau_nom not in st.session_state.form_data["intervenants"]:
                         st.session_state.form_data["intervenants"].append(nouveau_nom)
                         st.rerun()
 
-            st.divider()
-
             for idx, nom in enumerate(st.session_state.form_data["intervenants"]):
                 role_label = "RESPONSABLE N2" if idx == 0 else f"INTERVENANT {idx+1}"
                 st.write(f"✍️ **Signature {role_label} : {nom}**")
-                st.info(f" [ Emplacement Signature Tactile Horodatée : {nom} ] ")
+                st.info(f" [ Signature Tactile Horodatée : {nom} ] ")
 
             st.divider()
 
-            c_back, c_sub = st.columns([1, 2])
+            c_back, c_sub, c_pdf = st.columns([1, 2, 2])
             with c_back:
                 if st.button("⬅️ Précédent"):
                     st.session_state.step = 6
                     st.rerun()
 
             with c_sub:
-                if st.button(f"🚀 SOUMETTRE LE PERMIS POUR LE {st.session_state.form_data['date_str']}", type="primary", use_container_width=True):
+                if st.button(f"🚀 SOUMETTRE LE PERMIS ({st.session_state.form_data['date_str']})", type="primary", use_container_width=True):
                     carto = db_zones_carto.get(st.session_state.form_data["lieu_pdp"], {})
 
-                    derog_list = []
-                    if st.session_state.form_data["sta_meuleuse"]: derog_list.append("Meuleuse d'angle")
-                    if st.session_state.form_data["sta_couteau_lame"]: derog_list.append("Cutter lame ouverte")
-                    if st.session_state.form_data["sta_echelle_escabeau"]: derog_list.append("Échelle/Escabeau")
+                    derog_final = []
+                    if st.session_state.form_data["sta_meuleuse"]: derog_final.append("Meuleuse d'angle")
+                    if st.session_state.form_data["sta_couteau_lame"]: derog_final.append("Cutter lame ouverte")
+                    if st.session_state.form_data["sta_echelle_escabeau"]: derog_final.append("Échelle/Escabeau")
 
-                    spe_list = []
-                    if st.session_state.form_data["p_points_chauds"]: spe_list.append("Points Chauds")
-                    if st.session_state.form_data["p_confine"]: spe_list.append("Espace Confiné")
-                    if st.session_state.form_data["p_hauteur"]: spe_list.append("Travail Hauteur")
-                    if st.session_state.form_data["p_consignation_pression"] or st.session_state.form_data["p_consignation_mecanique"]: spe_list.append("Consignation (LOTO)")
+                    spe_final = []
+                    if st.session_state.form_data["p_points_chauds"]: spe_final.append("Points Chauds")
+                    if st.session_state.form_data["p_confine"]: spe_final.append("Espace Confiné")
+                    if st.session_state.form_data["p_hauteur"]: spe_final.append("Travail Hauteur")
+                    if st.session_state.form_data["p_consignation_pression"]: spe_final.append("Consignation (LOTO)")
 
                     nouveau_pt = {
                         "id": f"PT-2026-0928-0{len(st.session_state.permis_db)+1}",
@@ -702,18 +742,48 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                         "statut": "EN_ATTENTE_BATCH",
                         "heure": datetime.datetime.now().strftime("%H:%M"),
                         "intervenants": list(st.session_state.form_data["intervenants"]),
-                        "derogations": derog_list,
-                        "permis_specifiques": spe_list
+                        "derogations": derog_final,
+                        "permis_specifiques": spe_final,
+                        "tableau_risques": tableau_data
                     }
 
                     st.session_state.permis_db.append(nouveau_pt)
                     st.balloons()
-                    st.success(f"Permis {nouveau_pt['id']} créé avec succès pour le {nouveau_pt['date_travaux']} ! Transmis au Donneur d'Ordre P&G.")
+                    st.success(f"Permis {nouveau_pt['id']} créé avec succès ! Transmis au DO P&G pour le batch de 07h30.")
                     st.session_state.kiosk_mode = "HOME"
 
-# ---------------------------------------------------------
+            with c_pdf:
+                # Permis temporaire pour génération immédiate du PDF
+                permis_temp = {
+                    "id": f"PT-2026-0928-0{len(st.session_state.permis_db)+1}",
+                    "date_travaux": st.session_state.form_data["date_str"],
+                    "societe": st.session_state.form_data["societe"],
+                    "pdp": st.session_state.form_data["pdp"],
+                    "mop": st.session_state.form_data["mop"],
+                    "n2": st.session_state.form_data["n2_nom"],
+                    "zone": st.session_state.form_data["lieu_pdp"],
+                    "emplacement": st.session_state.form_data["lieu_precision"],
+                    "pr": "PR-2 (Parking Ouest)",
+                    "confinement": "ZC-01 (Hall M1)",
+                    "urg": "03.22.54.30.00",
+                    "statut": "EN_ATTENTE_BATCH",
+                    "heure": datetime.datetime.now().strftime("%H:%M"),
+                    "intervenants": list(st.session_state.form_data["intervenants"]),
+                    "derogations": [],
+                    "permis_specifiques": []
+                }
+                pdf_bytes = generer_contenu_pdf(permis_temp)
+                st.download_button(
+                    label="📄 TÉLÉCHARGER LE PERMIS PDF (PRÉ-VALIDATION)",
+                    data=pdf_bytes,
+                    file_name=f"Permis_P_and_G_{permis_temp['id']}_EnAttente.txt",
+                    mime="text/plain",
+                    use_container_width=True
+                )
+
+# ==============================================================================
 # INTERFACE 2 : DDS BOARD & BATCH 07H30 (DO / HSE)
-# ---------------------------------------------------------
+# ==============================================================================
 elif role == "📊 DDS Board & Batch 07h30 (DO / HSE)":
     st.markdown("""
     <div class="pg-header" style='background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);'>
@@ -738,19 +808,39 @@ elif role == "📊 DDS Board & Batch 07h30 (DO / HSE)":
     st.subheader("⚡ Validation Globale du Batch de 07h30")
     c_txt, c_btn = st.columns([3, 1])
     with c_txt:
-        st.write("Le traitement serveur exécute la fournée quotidienne. Cliquez pour valider l'ensemble des permis de votre secteur.")
+        st.write("Le traitement serveur exécute la fournée quotidienne à 07h30. Cliquez sur le bouton ci-contre pour valider l'ensemble des permis du secteur : l'encart passe au vert 'PERMIS VALIDÉ' et les signatures officielles sont apposées sur les PDFs.")
     with c_btn:
         if st.button("✅ VALIDER LE BATCH (07h30)", type="primary", use_container_width=True):
             for p in st.session_state.permis_db:
                 p["statut"] = "VALIDÉ"
-            st.success("Fournée de 07h30 validée ! QR Codes et permis A4 transmis aux responsables N2.")
+            st.success("Fournée de 07h30 validée avec succès ! Les e-mails de notification ont été envoyés avec le PDF mis à jour avec l'encart vert 'PERMIS VALIDÉ' et les signatures de validation.")
 
-    st.subheader("📋 Liste des Permis Émis")
-    st.dataframe(st.session_state.permis_db, use_container_width=True)
+    st.subheader("📋 Liste des Permis Émis & Téléchargement des PDFs Officiels")
+    
+    for pt in st.session_state.permis_db:
+        with st.expander(f"Permis Ref: {pt['id']} — {pt['societe']} ({pt['date_travaux']}) — Statut: {pt['statut']}"):
+            if pt['statut'] == 'VALIDÉ':
+                st.markdown("<div class='status-validated'>✅ PERMIS VALIDÉ PAR LE DONNEUR D'ORDRE</div>", unsafe_allow_html=True)
+            else:
+                st.markdown("<div class='status-pending'>⚠️ PERMIS EN ATTENTE DE VALIDATION BATCH (07h30)</div>", unsafe_allow_html=True)
 
-# ---------------------------------------------------------
+            st.write(f"**Responsable N2 :** {pt['n2']} | **Zone :** {pt['zone']}")
+            st.write(f"**Intervenants :** {', '.join(pt.get('intervenants', []))}")
+            st.write(f"**Permis Spécifiques / Dérogations :** {', '.join(pt.get('permis_specifiques', []) + pt.get('derogations', [])) if (pt.get('permis_specifiques') or pt.get('derogations')) else 'Aucun'}")
+
+            # Bouton de téléchargement du PDF mis à jour
+            pdf_data = generer_contenu_pdf(pt)
+            st.download_button(
+                label=f"📄 Télécharger le Permis PDF Officiel ({pt['id']})",
+                data=pdf_data,
+                file_name=f"Permis_P_and_G_{pt['id']}_{pt['statut']}.txt",
+                mime="text/plain",
+                key=f"btn_pdf_{pt['id']}"
+            )
+
+# ==============================================================================
 # INTERFACE 3 : INSPECTION TERRAIN QR CODE (CASQUE ROUGE)
-# ---------------------------------------------------------
+# ==============================================================================
 else:
     st.markdown("""
     <div class="pg-header" style='background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);'>
@@ -770,13 +860,15 @@ else:
         st.subheader("📄 Document Officiel A4 Numérisé")
         if "scanned_item" in st.session_state:
             p = st.session_state.scanned_item
-            color = "#10b981" if p["statut"] == "VALIDÉ" else "#f59e0b"
+            
+            if p['statut'] == 'VALIDÉ':
+                st.markdown("<div class='status-validated'>✅ PERMIS VALIDÉ PAR LE DONNEUR D'ORDRE</div>", unsafe_allow_html=True)
+            else:
+                st.markdown("<div class='status-pending'>⚠️ PERMIS EN ATTENTE DE VALIDATION BATCH (07h30)</div>", unsafe_allow_html=True)
+
             st.markdown(f"""
             <div style="background: white; border: 2px solid #003366; padding: 20px; border-radius: 8px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h3 style="color:#003366; margin:0;">PERMIS DE TRAVAIL GÉNÉRAL (STA)</h3>
-                    <span style="background:{color}; color:white; padding:4px 12px; border-radius:12px; font-weight:bold;">{p['statut']}</span>
-                </div>
+                <h3 style="color:#003366; margin:0;">PERMIS DE TRAVAIL GÉNÉRAL (STA) — P&G AMIENS</h3>
                 <hr>
                 <p><b>Réf :</b> {p['id']} | <b>Date Intervention :</b> {p.get('date_travaux', 'Aujourd\'hui')} | <b>Horodatage :</b> {p['heure']}</p>
                 <p><b>Entreprise :</b> {p['societe']} | <b>PDP :</b> {p['pdp']} | <b>MoP :</b> {p.get('mop', 'MoP Standard')}</p>
@@ -788,9 +880,19 @@ else:
                 <p><b>Permis Spécifiques / Dérogations :</b> {', '.join(p.get('permis_specifiques', []) + p.get('derogations', [])) if (p.get('permis_specifiques') or p.get('derogations')) else 'Aucun'}</p>
                 <hr>
                 <p style="text-align:center; color:#003366; font-weight:bold; margin:0;">
-                    ✅ CO-SIGNATURES VECTORIELLES AUDITÉES & HORODATÉES EN BDD
+                    ✅ SIGNATURES VECTORIELLES AUDITÉES & HORODATÉES EN BDD
                 </p>
             </div>
             """, unsafe_allow_html=True)
+
+            # Téléchargement direct du PDF depuis le smartphone Casque Rouge
+            pdf_data = generer_contenu_pdf(p)
+            st.download_button(
+                label="📄 TÉLÉCHARGER LE PERMIS AUDITÉ EN PDF",
+                data=pdf_data,
+                file_name=f"Permis_P_and_G_{p['id']}_{p['statut']}.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
         else:
             st.info("Cliquez sur 'Simuler Scan QR Code' pour afficher la fiche numérisée.")
