@@ -38,6 +38,10 @@ st.markdown("""
         background-color: #fef2f2; border: 2px solid #ef4444; color: #991b1b;
         padding: 18px; border-radius: 10px; margin-bottom: 20px;
     }
+    .notice-epi-card {
+        background-color: #fffbebf8; border: 2px solid #f59e0b; color: #92400e;
+        padding: 16px; border-radius: 10px; margin-bottom: 15px; font-weight: 600;
+    }
     .status-pending {
         background-color: #fef08a; color: #854d0e; border: 2px solid #eab308;
         padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.1rem;
@@ -146,7 +150,7 @@ VALEURS_PAR_DEFAUT = {
     "description": "Maintenance et travaux sur site",
     "intervenants": ["Léa DUSEK", "Matthieu MARTIN"],
     
-    # 1. RISQUES PRINCIPAUX / PERMIS SPÉCIFIQUES (ÉTAPES 5 & 6)
+    # 1. RISQUES PRINCIPAUX (ÉTAPE 5)
     "p_hauteur": False,
     "p_toiture": False,
     "p_points_chauds": False,
@@ -159,32 +163,42 @@ VALEURS_PAR_DEFAUT = {
     "p_equipement_pression": False,
     "p_laser_classe_iv": False,
     "p_demolition": False,
+    "p_meuleuse": False,
     "dta_consultation": False,
     "p_consignation": False,
     "p_systeme_risque": False,
 
-    # 2. STA (SAFETY TASK ASSIGNMENT)
+    # 2. STA (SAFETY TASK ASSIGNMENT - ÉTAPE 5)
     "sta_prod_chimiques": False,
     "sta_prod_chimiques_nom": "",
-    
-    "sta_meuleuse": False,
-    "meuleuse_diametre": "125 mm", "meuleuse_operateurs": ["Léa DUSEK"], "meuleuse_marque": "Bosch Pro", "meuleuse_alim": "Batterie 18V", "meuleuse_ref": "MEU-042", "meuleuse_vitesse": "11000",
-    "meu_env_plain_pied": True, "meu_env_hauteur": False, "meu_env_confine": False, "meu_env_excavation": False, "meu_env_stable": True, "meu_env_maintien_2mains": True, "meu_env_piece_fixee": True, "meu_env_hors_ligne_tir": True, "meu_position_op": "Debout",
-    "meuleuse_u_decoupe": False, "meuleuse_mat_decoupe": db_materiaux[0], "meuleuse_u_ebavurage": False, "meuleuse_mat_ebavurage": db_materiaux[0], "meuleuse_u_flap": False, "meuleuse_u_blanchiment": False, "meuleuse_disque_blanchiment": db_disques_blanchiment[0],
-
     "t_outils_electro": True,
     "t_meulage_poncage": False,
     "t_travaux_manuels": True,
     "t_manutention_lourde": False,
     "t_nettoyage_chantiers": True,
 
-    # EPIs DE BASE SITE P&G
-    "epi_lunettes_securite": True,
-    "epi_chaussures_s3": True,
-    "epi_casque_chantiers": True,
-    "epi_gants_manutention": True,
-    "epi_protections_auditives": False,
-    "epi_casque_jugulaire_obli": False,
+    # SPÉCIFICITÉS MEULEUSE (POUR ÉTAPE 6 PERMIS SPÉCIFIQUE)
+    "meuleuse_diametre": "125 mm", "meuleuse_operateurs": ["Léa DUSEK"], "meuleuse_marque": "Bosch Pro", "meuleuse_alim": "Batterie 18V", "meuleuse_ref": "MEU-042", "meuleuse_vitesse": "11000",
+    "meu_env_plain_pied": True, "meu_env_hauteur": False, "meu_env_confine": False, "meu_env_excavation": False, "meu_env_stable": True, "meu_env_maintien_2mains": True, "meu_env_piece_fixee": True, "meu_env_hors_ligne_tir": True, "meu_position_op": "Debout",
+    "meuleuse_u_decoupe": False, "meuleuse_mat_decoupe": db_materiaux[0], "meuleuse_u_ebavurage": False, "meuleuse_mat_ebavurage": db_materiaux[0], "meuleuse_u_flap": False, "meuleuse_u_blanchiment": False, "meuleuse_disque_blanchiment": db_disques_blanchiment[0],
+
+    # 3. LISTE EXHAUSTIVE DES EPIS (AVEC NORMES EXACTES)
+    "epi_lunettes_chantier_en166": True,
+    "epi_lunettes_etanches": False,
+    "epi_visiere_idra_en166b": False,
+    "epi_lunettes_pare_visage": False,
+    "epi_casque_jugulaire": True,
+    "epi_casque_protection_auditive_en387": False,
+    "epi_gants_anticoupure_4x43d": True,
+    "epi_gants_manutention_cuir": True,
+    "epi_gants_chimiques_en374": False,
+    "epi_gants_elec_en60903": False,
+    "epi_bouchons_oreilles": False,
+    "epi_resp_ffp1_ffp2": False,
+    "epi_resp_3m6000": False,
+    "epi_resp_versaflo": False,
+    "epi_resp_cartouche_abek_en14387": False,
+    "epi_autre_texte": "",
 
     # FORMULAIRES HRT (ÉTAPES 6)
     "h_pirl": False, "h_pirl_vgp": True, "h_pirl_soc": "ABYLSEN",
@@ -409,10 +423,22 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 if st.button("Suivant ➔", type="primary"): st.session_state.step = 5; st.rerun()
 
         # ==============================================================================
-        # ÉTAPE 5 : RESTRUCTURÉE (1. RISQUES PRINCIPAUX -> 2. STA -> 3. EPIS)
+        # ÉTAPE 5 : MÉTÉO -> RISQUES PRINCIPAUX -> STA -> EPIS DE BASE P&G
         # ==============================================================================
         elif current_step == 5:
-            st.subheader("5. Liste des Risques Principaux, STA (Safety Task Assignment) & EPIs")
+            st.subheader("5. Analyse des Risques, STA & Équipements de Protection Individuelle")
+
+            # ------------------------------------------------------------------
+            # 0. ENCART MÉTÉO DYNAMIQUE
+            # ------------------------------------------------------------------
+            meteo_live = obtenir_meteo_amiens_live()
+            st.markdown(f"""
+            <div class='weather-card'>
+                🌤️ <b>MÉTÉO EN DIRECT — STATION AMIENS-DURY (Source: {meteo_live['source']}) :</b><br>
+                • <b>Aujourd'hui :</b> Temp. Min {meteo_live['temp_min_j0']}°C / Max {meteo_live['temp_max_j0']}°C | 💨 Rafales de vent max : <b>{meteo_live['vent_j0']} km/h</b><br>
+                • <b>Demain (J+1) :</b> Temp. Max {meteo_live['temp_max_j1']}°C | 💨 Rafales : {meteo_live['vent_j1']} km/h
+            </div>
+            """, unsafe_allow_html=True)
 
             # ------------------------------------------------------------------
             # 1. LISTE DES RISQUES PRINCIPAUX (EN PREMIER)
@@ -435,14 +461,17 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 st.session_state.form_data["p_equipement_pression"] = st.checkbox("Équipement sous pression", value=get_val("p_equipement_pression"))
                 st.session_state.form_data["p_laser_classe_iv"] = st.checkbox("Travaux à proximité de Lasers Classe IV", value=get_val("p_laser_classe_iv"))
                 st.session_state.form_data["p_demolition"] = st.checkbox("Démolition", value=get_val("p_demolition"))
+                st.session_state.form_data["p_meuleuse"] = st.checkbox("Utilisation de la meuleuse", value=get_val("p_meuleuse"))
 
-            # Synchronisation automatique avec la logique Consignation LOTO (3 phases)
+            # Répercussions dynamiques des clics
+            if get_val("p_meuleuse"):
+                st.session_state.form_data["p_points_chauds"] = True
+                st.session_state.form_data["t_outils_electro"] = True
+                st.info("🔥⚙️ **Répercussion :** L'utilisation de la meuleuse coche automatiquement 'Utilisation d'outils électroportatifs' dans la STA, ainsi que le 'Permis Point Chaud' et la 'Fiche Meuleuse' à l'Étape 6.")
+
             if get_val("p_ouverture_circuit") or get_val("p_machines_mouvement") or get_val("p_equipement_pression") or get_val("p_laser_classe_iv"):
                 st.session_state.form_data["p_consignation"] = True
-            else:
-                st.session_state.form_data["p_consignation"] = False
 
-            # Répercussion conditionnelle Démolition -> Consultation DTA
             if get_val("p_demolition"):
                 st.warning("🧱 **Condition Activée (Démolition) :**")
                 st.session_state.form_data["dta_consultation"] = st.checkbox("Consultation DTA (Dossier Technique Amiante) effectuée et validée", value=get_val("dta_consultation"))
@@ -452,88 +481,69 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             # ------------------------------------------------------------------
             # 2. STA (SAFETY TASK ASSIGNMENT)
             # ------------------------------------------------------------------
-            st.write("##### 🛠️ 2. STA (Safety Task Assignment) & Caractérisation des Outils :")
+            st.write("##### 🛠️ 2. STA (Safety Task Assignment) & Outillage de Chantier :")
 
-            # STA 1: Produits chimiques
-            st.session_state.form_data["sta_prod_chimiques"] = st.checkbox("Produits chimiques utilisés ou manipulés lors de l'intervention", value=get_val("sta_prod_chimiques"))
+            # Produits Chimiques
+            st.session_state.form_data["sta_prod_chimiques"] = st.checkbox("Produits chimiques (si coché : indiquez les détails)", value=get_val("sta_prod_chimiques"))
             if get_val("sta_prod_chimiques"):
-                st.session_state.form_data["sta_prod_chimiques_nom"] = st.text_input("Veuillez indiquer le(s) produit(s) chimique(s) concerné(s) :", value=get_val("sta_prod_chimiques_nom"), placeholder="ex: Solvant, Acide Chlorhydrique, Soude...")
+                st.session_state.form_data["sta_prod_chimiques_nom"] = st.text_input("Nom(s) du/des produit(s) chimique(s) utilisé(s) :", value=get_val("sta_prod_chimiques_nom"), placeholder="ex: Solvant, Acide Chlorhydrique, Soude...")
                 st.session_state.form_data["p_systeme_risque"] = True
-                st.info("☣ **Répercussion :** L'utilisation de produits chimiques déclenche l'ouverture du permis Systèmes à Risques.")
+                st.info("☣ **Répercussion :** L'utilisation de produits chimiques ouvre le Permis Systèmes à Risques à l'Étape 6.")
 
-            # STA 2: Meuleuse / Tronçonneuse
-            st.session_state.form_data["sta_meuleuse"] = st.checkbox("Utilisation d'une Meuleuse / Tronçonneuse", value=get_val("sta_meuleuse"))
-            if get_val("sta_meuleuse"):
-                st.session_state.form_data["p_points_chauds"] = True
-                st.info("🔥 **Répercussion :** L'utilisation de la meuleuse déclenche automatiquement l'ouverture du Permis Point Chaud.")
-                
-                with st.expander("⚙️ Détails et Caractéristiques Complètes de la Meuleuse / Tronçonneuse", expanded=True):
-                    c_m1, c_m2 = st.columns(2)
-                    with c_m1:
-                        st.session_state.form_data["meuleuse_diametre"] = st.selectbox("Diamètre du disque :", ["125 mm", "230 mm"], index=0 if get_val("meuleuse_diametre") == "125 mm" else 1)
-                        st.session_state.form_data["meuleuse_marque"] = st.text_input("Marque et Modèle :", value=get_val("meuleuse_marque"))
-                    with c_m2:
-                        st.session_state.form_data["meuleuse_alim"] = st.selectbox("Alimentation :", ["Batterie 18V", "Filaire 230V", "Pneumatique"], index=0)
-                        st.session_state.form_data["meuleuse_ref"] = st.text_input("Référence / N° de série :", value=get_val("meuleuse_ref"))
-
-                    st.write("##### Opérations effectuées avec la meuleuse :")
-                    cm_op1, cm_op2 = st.columns(2)
-                    with cm_op1:
-                        st.session_state.form_data["meuleuse_u_decoupe"] = st.checkbox("Découpe", value=get_val("meuleuse_u_decoupe"))
-                        if get_val("meuleuse_u_decoupe"):
-                            st.session_state.form_data["meuleuse_mat_decoupe"] = st.selectbox("Matériau découpé :", db_materiaux, index=0)
-                        
-                        st.session_state.form_data["meuleuse_u_ebavurage"] = st.checkbox("Ébavurage / Meulage", value=get_val("meuleuse_u_ebavurage"))
-                        if get_val("meuleuse_u_ebavurage"):
-                            st.session_state.form_data["meuleuse_mat_ebavurage"] = st.selectbox("Matériau ébavuré :", db_materiaux, index=0)
-
-                    with cm_op2:
-                        st.session_state.form_data["meuleuse_u_flap"] = st.checkbox("Ponçage disque à lamelles (Flap)", value=get_val("meuleuse_u_flap"))
-                        st.session_state.form_data["meuleuse_u_blanchiment"] = st.checkbox("Blanchiment / Nettoyage de surface", value=get_val("meuleuse_u_blanchiment"))
-                        if get_val("meuleuse_u_blanchiment"):
-                            st.session_state.form_data["meuleuse_disque_blanchiment"] = st.selectbox("Type de disque blanchiment :", db_disques_blanchiment, index=0)
-
-            # STA 3: Autres Tâches et Outils Courants
-            st.write("##### Autres tâches courantes et outillages prévus :")
+            # Tâches / Outils STA
             ct1, ct2 = st.columns(2)
             with ct1:
-                st.session_state.form_data["t_outils_electro"] = st.checkbox("Utilisation d'outils électroportatifs généraux (perceuse, visseuse...)", value=get_val("t_outils_electro"))
-                st.session_state.form_data["t_meulage_poncage"] = st.checkbox("Ponçage / Meulage manuel", value=get_val("t_meulage_poncage"))
+                st.session_state.form_data["t_outils_electro"] = st.checkbox("Utilisation d'outils électroportatifs", value=get_val("t_outils_electro"))
+                st.session_state.form_data["t_meulage_poncage"] = st.checkbox("Meulage / Ponçage / Tronçonnage manuel", value=get_val("t_meulage_poncage"))
                 st.session_state.form_data["t_travaux_manuels"] = st.checkbox("Travaux manuels généraux et d'outillage à main", value=get_val("t_travaux_manuels"))
             with ct2:
                 st.session_state.form_data["t_manutention_lourde"] = st.checkbox("Manutention manuelle de charges ou matériel", value=get_val("t_manutention_lourde"))
-                st.session_state.form_data["t_nettoyage_chantiers"] = st.checkbox("Nettoyage et rangement de zone de chantier", value=get_val("t_nettoyage_chantiers"))
+                st.session_state.form_data["t_nettoyage_chantiers"] = st.checkbox("Nettoyage, rangement de zone de chantier", value=get_val("t_nettoyage_chantiers"))
 
             st.divider()
 
             # ------------------------------------------------------------------
-            # 3. EPIS DE BASE SITE P&G
+            # 3. LISTE EXHAUSTIVE DES EPIS (AVEC LES NORMES EXACTES)
             # ------------------------------------------------------------------
-            st.write("##### 🥽 3. Équipements de Protection Individuelle (EPIs de Base P&G) :")
-            cepi_b1, cepi_b2 = st.columns(2)
-            with cepi_b1:
-                st.session_state.form_data["epi_lunettes_securite"] = st.checkbox("Lunettes de sécurité avec protections latérales (Obligatoire)", value=get_val("epi_lunettes_securite"))
-                st.session_state.form_data["epi_chaussures_s3"] = st.checkbox("Chaussures de sécurité S3 (Obligatoire)", value=get_val("epi_chaussures_s3"))
-                st.session_state.form_data["epi_casque_chantiers"] = st.checkbox("Casque de chantier standard", value=get_val("epi_casque_chantiers"))
-            with cepi_b2:
-                st.session_state.form_data["epi_gants_manutention"] = st.checkbox("Gants de manutention anti-coupure / mécaniques", value=get_val("epi_gants_manutention"))
-                st.session_state.form_data["epi_protections_auditives"] = st.checkbox("Protections auditives (bouchons / casque antibruit)", value=get_val("epi_protections_auditives"))
+            st.write("##### 🥽 3. Équipements de Protection Individuelle (EPIs) :")
 
-            st.write("##### ➕ Ajustement Automatique des EPIs Spécifiques :")
-            if get_val("p_hauteur") or get_val("p_toiture"):
-                st.session_state.form_data["epi_casque_jugulaire_obli"] = True
-                st.warning("🥽 **EPI rajouté automatiquement :** Casque avec jugulaire obligatoire.")
-            else:
-                st.session_state.form_data["epi_casque_jugulaire_obli"] = False
+            st.markdown("""
+            <div class='notice-epi-card'>
+                ⚠️ <b>Rappel Obligatoire :</b> Les chaussures de sécurité montantes, casque avec jugulaire, lunette de sécurité à protection latérale (EN166), gilet haute visibilité (sauf pour les travaux électriques ou par point chaud), et gants anti-coupure sont obligatoires sur le chantier de construction.
+            </div>
+            """, unsafe_allow_html=True)
 
-            if get_val("p_electrique"):
-                st.info("🥽 **EPIs de base Électrique rajoutés :** Casque d'électricien, Gants isolants électriques (EN 60903) + Surgants cuir + Vêtements 100% coton/ignifugés.")
+            cepi_col1, cepi_col2 = st.columns(2)
 
-            if get_val("p_points_chauds"):
-                st.info("🥽 **EPIs de base Point Chaud rajoutés :** Écran facial EN166B ou cagoule de soudure + Gants ignifugés + Vêtements ignifugés.")
+            with cepi_col1:
+                st.write("**• Lunettes & Protections Faciales :**")
+                st.session_state.form_data["epi_lunettes_chantier_en166"] = st.checkbox("Lunettes Chantier ou Visière — EN 166 (Obligatoire)", value=get_val("epi_lunettes_chantier_en166"))
+                st.session_state.form_data["epi_lunettes_etanches"] = st.checkbox("Lunettes étanches", value=get_val("epi_lunettes_etanches"))
+                st.session_state.form_data["epi_visiere_idra_en166b"] = st.checkbox("Protection faciale : Visière (casque type IDRA) — EN 166B", value=get_val("epi_visiere_idra_en166b"))
+                st.session_state.form_data["epi_lunettes_pare_visage"] = st.checkbox("Lunette + pare visage", value=get_val("epi_lunettes_pare_visage"))
 
-            if get_val("p_confine"):
-                st.info("🥽 **EPI Espace Confiné rajouté :** Masque auto-sauveteur (type M20).")
+                st.write("**• Casques :**")
+                st.session_state.form_data["epi_casque_jugulaire"] = st.checkbox("Casque avec jugulaire (Obligatoire)", value=get_val("epi_casque_jugulaire"))
+                st.session_state.form_data["epi_casque_protection_auditive_en387"] = st.checkbox("Casque avec protection auditive — EN 387/A1", value=get_val("epi_casque_protection_auditive_en387"))
+
+                st.write("**• Protections Auditives :**")
+                st.session_state.form_data["epi_bouchons_oreilles"] = st.checkbox("Bouchons d'oreilles / Protections moulées", value=get_val("epi_bouchons_oreilles"))
+
+            with cepi_col2:
+                st.write("**• Gants de Protection :**")
+                st.session_state.form_data["epi_gants_anticoupure_4x43d"] = st.checkbox("Gants Anti-coupures — 4543 / 4x43D", value=get_val("epi_gants_anticoupure_4x43d"))
+                st.session_state.form_data["epi_gants_manutention_cuir"] = st.checkbox("Gants Manutention — Cuir bovin ou chèvre", value=get_val("epi_gants_manutention_cuir"))
+                st.session_state.form_data["epi_gants_chimiques_en374"] = st.checkbox("Gants Chimiques — EN 374-1/2", value=get_val("epi_gants_chimiques_en374"))
+                st.session_state.form_data["epi_gants_elec_en60903"] = st.checkbox("Gants Électrique isolants / surgants — EN 60903", value=get_val("epi_gants_elec_en60903"))
+
+                st.write("**• Protections Respiratoires :**")
+                st.session_state.form_data["epi_resp_ffp1_ffp2"] = st.checkbox("Masque FFP1 / FFP2", value=get_val("epi_resp_ffp1_ffp2"))
+                st.session_state.form_data["epi_resp_3m6000"] = st.checkbox("Masque demi-facial 3M6000", value=get_val("epi_resp_3m6000"))
+                st.session_state.form_data["epi_resp_versaflo"] = st.checkbox("Système à adduction / ventilation assistée Versaflo", value=get_val("epi_resp_versaflo"))
+                st.session_state.form_data["epi_resp_cartouche_abek_en14387"] = st.checkbox("Cartouche ABEK — EN 14387", value=get_val("epi_resp_cartouche_abek_en14387"))
+
+            st.write("**• Autre :**")
+            st.session_state.form_data["epi_autre_texte"] = st.text_input("Autre protection spécifique (à préciser) :", value=get_val("epi_autre_texte"), placeholder="ex: Tablier de protection, harnais de maintien...")
 
             c_back, c_next = st.columns(2)
             with c_back:
@@ -542,10 +552,39 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 if st.button("Suivant ➔", type="primary"): st.session_state.step = 6; st.rerun()
 
         # ==============================================================================
-        # ÉTAPE 6 : FORMULAIRES SPÉCIFIQUES (HRT)
+        # ÉTAPE 6 : FORMULAIRES SPÉCIFIQUES (HRT + MEULEUSE)
         # ==============================================================================
         elif current_step == 6:
             st.subheader("6. Ouverture des Permis Spécifiques")
+
+            # FICHE COMPLÈTE SPÉCIFICITÉS MEULEUSE EN ÉTAPE 6
+            if get_val("p_meuleuse"):
+                st.warning("⚙️ **SPÉCIFICITÉS & CARACTÉRISTIQUES OUTIL MEULEUSE**")
+                c_m1, c_m2 = st.columns(2)
+                with c_m1:
+                    st.session_state.form_data["meuleuse_diametre"] = st.selectbox("Diamètre du disque :", ["125 mm", "230 mm"], index=0 if get_val("meuleuse_diametre") == "125 mm" else 1)
+                    st.session_state.form_data["meuleuse_marque"] = st.text_input("Marque et Modèle de l'appareil :", value=get_val("meuleuse_marque"))
+                with c_m2:
+                    st.session_state.form_data["meuleuse_alim"] = st.selectbox("Type d'alimentation :", ["Batterie 18V", "Filaire 230V", "Pneumatique"], index=0)
+                    st.session_state.form_data["meuleuse_ref"] = st.text_input("Référence / N° de série :", value=get_val("meuleuse_ref"))
+
+                st.write("##### Opérations prévues avec la meuleuse :")
+                cm_op1, cm_op2 = st.columns(2)
+                with cm_op1:
+                    st.session_state.form_data["meuleuse_u_decoupe"] = st.checkbox("Découpe / Tronçonnage", value=get_val("meuleuse_u_decoupe"))
+                    if get_val("meuleuse_u_decoupe"):
+                        st.session_state.form_data["meuleuse_mat_decoupe"] = st.selectbox("Matériau à découper :", db_materiaux, index=0)
+                    
+                    st.session_state.form_data["meuleuse_u_ebavurage"] = st.checkbox("Ébavurage / Meulage", value=get_val("meuleuse_u_ebavurage"))
+                    if get_val("meuleuse_u_ebavurage"):
+                        st.session_state.form_data["meuleuse_mat_ebavurage"] = st.selectbox("Matériau ébavuré :", db_materiaux, index=0)
+
+                with cm_op2:
+                    st.session_state.form_data["meuleuse_u_flap"] = st.checkbox("Ponçage disque à lamelles (Flap)", value=get_val("meuleuse_u_flap"))
+                    st.session_state.form_data["meuleuse_u_blanchiment"] = st.checkbox("Blanchiment / Nettoyage de surface", value=get_val("meuleuse_u_blanchiment"))
+                    if get_val("meuleuse_u_blanchiment"):
+                        st.session_state.form_data["meuleuse_disque_blanchiment"] = st.selectbox("Type de disque blanchiment :", db_disques_blanchiment, index=0)
+                st.divider()
 
             # 1. HAUTEUR
             if get_val("p_hauteur"):
@@ -830,7 +869,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 st.write("##### Risques liés à l'intervention (cases à cocher 'Oui' ou 'Non') :")
                 cr1, cr2, cr3 = st.columns(3)
                 with cr1:
-                    st.session_state.form_data["conf_r_atmo"] = st.checkbox("Atmosphère dangereuse", value=get_val("conf_r_atmo"))
+                    st.session_state.form_data["conf_r_atmo"] = st.checkbox("Atmosphere dangereuse", value=get_val("conf_r_atmo"))
                     st.session_state.form_data["conf_r_chimique"] = st.checkbox("Substance chimique ou résidus dans la cuve", value=get_val("conf_r_chimique"))
                     st.session_state.form_data["conf_r_inflam"] = st.checkbox("Substances Inflammables/Combustibles", value=get_val("conf_r_inflam"))
                 with cr2:
@@ -1098,6 +1137,8 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 tableau_data.append({"activite": "Accès Toiture", "risque": "Chute / Conditions Météo", "prevention": f"{get_val('toiture_protection')} + Binôme + Valideur ePDP"})
             if get_val("p_points_chauds"):
                 tableau_data.append({"activite": "Point Chaud / Flamme", "risque": "Incendie", "prevention": f"Visière EN166B + Extincteurs ({get_val('chaud_extincteur1')}/{get_val('chaud_extincteur2')}) + Vigie {get_val('chaud_vigie_nom')}"})
+            if get_val("p_meuleuse"):
+                tableau_data.append({"activite": "Meuleuse / Tronçonneuse", "risque": "Projections / Coupure", "prevention": f"Écran facial EN166B + Disque {get_val('meuleuse_diametre')} + Point Chaud"})
             if get_val("p_excavation"):
                 tableau_data.append({"activite": "Excavation / Tranchée", "risque": "Réseaux / Effondrement", "prevention": f"Plans 7 réseaux OK + DICT + 3 Signatures ({get_val('excav_chef_manoeuvre')}/{get_val('excav_do')}/{get_val('excav_casque_rouge')})"})
             if get_val("p_grutage"):
