@@ -146,26 +146,37 @@ VALEURS_PAR_DEFAUT = {
     "description": "Maintenance et travaux sur site",
     "intervenants": ["Léa DUSEK", "Matthieu MARTIN"],
     
-    # TÂCHES / OUTILS DÉCLARÉES À L'ÉTAPE 5
-    "t_outils_electro": True,
-    "t_meulage_poncage": False,
-    "t_travaux_manuels": True,
-    "t_manutention_lourde": False,
-    "t_nettoyage_chantiers": True,
+    # 1. RISQUES PRINCIPAUX / PERMIS SPÉCIFIQUES (ÉTAPES 5 & 6)
+    "p_hauteur": False,
+    "p_toiture": False,
+    "p_points_chauds": False,
+    "p_excavation": False,
+    "p_grutage": False,
+    "p_confine": False,
+    "p_electrique": False,
+    "p_ouverture_circuit": False,
+    "p_machines_mouvement": False,
+    "p_equipement_pression": False,
+    "p_laser_classe_iv": False,
+    "p_demolition": False,
+    "dta_consultation": False,
+    "p_consignation": False,
+    "p_systeme_risque": False,
 
-    # OUTILLAGE DÉTAILLÉ / MEULEUSE
+    # 2. STA (SAFETY TASK ASSIGNMENT)
+    "sta_prod_chimiques": False,
+    "sta_prod_chimiques_nom": "",
+    
     "sta_meuleuse": False,
     "meuleuse_diametre": "125 mm", "meuleuse_operateurs": ["Léa DUSEK"], "meuleuse_marque": "Bosch Pro", "meuleuse_alim": "Batterie 18V", "meuleuse_ref": "MEU-042", "meuleuse_vitesse": "11000",
     "meu_env_plain_pied": True, "meu_env_hauteur": False, "meu_env_confine": False, "meu_env_excavation": False, "meu_env_stable": True, "meu_env_maintien_2mains": True, "meu_env_piece_fixee": True, "meu_env_hors_ligne_tir": True, "meu_position_op": "Debout",
     "meuleuse_u_decoupe": False, "meuleuse_mat_decoupe": db_materiaux[0], "meuleuse_u_ebavurage": False, "meuleuse_mat_ebavurage": db_materiaux[0], "meuleuse_u_flap": False, "meuleuse_u_blanchiment": False, "meuleuse_disque_blanchiment": db_disques_blanchiment[0],
 
-    # PERMIS SPÉCIFIQUES DÉCLENCHEURS (ÉTAPE 5)
-    "p_hauteur": False, "p_toiture": False, "p_points_chauds": False, "p_excavation": False,
-    "p_grutage": False, "p_confine": False, "p_electrique": False, "p_consignation": False, "p_systeme_risque": False,
-
-    # CONDITIONNEL DEMOLITION & DTA (ÉTAPE 5)
-    "act_demolition": False,
-    "dta_consultation": False,
+    "t_outils_electro": True,
+    "t_meulage_poncage": False,
+    "t_travaux_manuels": True,
+    "t_manutention_lourde": False,
+    "t_nettoyage_chantiers": True,
 
     # EPIs DE BASE SITE P&G
     "epi_lunettes_securite": True,
@@ -175,94 +186,18 @@ VALEURS_PAR_DEFAUT = {
     "epi_protections_auditives": False,
     "epi_casque_jugulaire_obli": False,
 
-    # 1. HAUTEUR / NACELLE / ÉCHAFAUDAGE
+    # FORMULAIRES HRT (ÉTAPES 6)
     "h_pirl": False, "h_pirl_vgp": True, "h_pirl_soc": "ABYLSEN",
     "h_nacelle": False, "h_nacelle_vgp": True, "h_nacelle_checklist": True, "h_nacelle_caces": True, "h_nacelle_aut": True, "h_nacelle_harnais": True, "h_nacelle_soc": "ABYLSEN",
-    "h_echaf": False,
-    "h_echaf_montage": False, "h_echaf_montage_qualif": True, "h_echaf_montage_harnais": True,
-    "h_echaf_util": False, "h_echaf_util_qualif": True,
-    "h_echaf_ctrl_regle": True, "h_echaf_certif_affiche": True, "h_echaf_verif_j": True, "h_echaf_soc_util": "ABYLSEN",
-
-    # 2. ACCÈS TOITURE
-    "toiture_protection": "Garde-corps",
-    "toiture_valideur": "Matthieu MARTIN (Habilité ePDP Accès Toiture)",
-
-    # 3. POINT CHAUD
-    "chaud_gants_soudeur": False, "chaud_gants_chaleur": False, "chaud_gants_anticoupure": True,
-    "chaud_extincteur1": "Eau + additifs", "chaud_extincteur2": "CO2",
-    "chaud_degage_10m": True, "chaud_baches": False,
-    "chaud_traverse_mur": False, "chaud_vigie_opposee": False,
-    "chaud_ouverture_10m": False, "chaud_obstruction": False, "chaud_vigie_autre_cote": False,
-    "chaud_vigie_nom": "Matthieu MARTIN",
-    "chaud_personne_surv_60m": "Léa DUSEK",
-    "chaud_heure_fin": "15:00", "chaud_heure_depart": "16:00", "chaud_commentaires": "",
-
-    # 4. EXCAVATION / TRANCHÉE
-    "excav_plans_eaux_indus": True, "excav_plans_eaux_usees": True, "excav_plans_eaux_pluv": True, "excav_plans_eaux_incendie": True,
-    "excav_plans_ht": True, "excav_plans_bt": True, "excav_plans_gaz": True,
-    "excav_struct_proximite": False, "excav_architecte": False, "excav_dict": True,
-    "excav_effondrement": False, "excav_eau_pompe": False, "excav_balisage": True, "excav_vehicule_3m": True, "excav_deblais": True,
-    "excav_acces": "Escalier / Rampe",
-    "excav_profondeur_130": False, "excav_blindage": False,
-    "excav_schema_commentaires": "",
-    "excav_chef_manoeuvre": "Léa DUSEK", "excav_do": "Matthieu MARTIN", "excav_casque_rouge": "Alexandre LEFEBVRE",
-
-    # 5. GRUTAGE
-    "grut_desc_mop": "Levage groupe froid rooftop",
-    "grut_poids_charge": 2500.0, "grut_poids_acc": 200.0, "grut_unite": "kg",
-    "grut_immat": "GRUE-AMIENS-88", "grut_fleche": 35.0, "grut_portee": 20.0, "grut_pression_patin": "12 T/m²", "grut_rayon": 15.0,
-    "grut_balisage": True, "grut_plan_vue": True, "grut_plan_elev": True, "grut_obstacles": True,
-    "grut_anemometre": True, "grut_vent_val": 18.0, "grut_vent_unite": "km/h",
-    "grut_pesage": True, "grut_centre_gravite": True, "grut_angles_elingue": True, "grut_plaques_rep": True,
-    "grut_chef_m_nom": "Léa DUSEK", "grut_chef_m_soc": "ABYLSEN",
-    "grut_elingueur_nom": "Matthieu MARTIN", "grut_elingueur_soc": "ABYLSEN",
-    "grut_grutier_nom": "Jean LEVAGE", "grut_grutier_soc": "APAVE",
-    "grut_certif_grue": True, "grut_certif_acc": True, "grut_certif_plaques": True, "grut_check_j_grue": True, "grut_check_j_acc": True,
-    "grut_pattes_concu": True, "grut_pattes_defaut": False, "grut_pattes_adequation": True, "grut_charges_annexes": True,
-    "grut_schema_commentaires": "",
-    "grut_do_sign": "Matthieu MARTIN", "grut_casque_rouge_sign": "Alexandre LEFEBVRE",
-
-    # 6. ESPACE CONFINÉ
-    "conf_lieu": "Cuve C-102 Ligne 3",
-    "conf_r_atmo": True, "conf_r_chimique": False, "conf_r_inflam": False, "conf_r_orga": False,
-    "conf_r_meca": False, "conf_r_thermiq": False, "conf_r_bruit": False, "conf_troudhomme_610": True,
-    "conf_catec": True, "conf_hauteur": False, "conf_m20": True,
-    "conf_secouriste": "Attribution automatique suivant la localisation", "conf_medical": "Attribution automatique suivant la localisation",
-    "conf_action_chaud": False, "conf_ventilation_nat": True, "conf_ventilation_forcee": True, "conf_ventilation_debit": "Minimum 56m3/h par personne",
-    "conf_consignation_gaz": True, "conf_cuve_vide": True, "conf_vol_caches": False, "conf_eclairage_24v": True, "conf_blocage_ouvert": True,
-    "conf_echaf_echelle": False, "conf_prod_chim": False, "conf_laser": False, "conf_comm_type": "Talkie Walkie",
-    "conf_o2": 20.9, "conf_o2_contre_mesure": 20.9,
-    "conf_h2s_check": False, "conf_h2s": 0.0,
-    "conf_co_check": False, "conf_co": 0.0,
-    "conf_explo_check": False, "conf_explo": 0.0,
-    "conf_temp_cuve": 22.0, "conf_verif_temp": "N2", "conf_inflam_lel": 0.0, "conf_verif_lel": "N2",
-    "conf_schema_commentaires": "",
-    "conf_entrant": "Léa DUSEK", "conf_standby": "Matthieu MARTIN", "conf_do": "Alexandre LEFEBVRE",
-
-    # 7. TRAVAIL ÉLECTRIQUE
-    "elec_modife": False, "elec_armoire": True, "elec_voisinage_tension": True, "elec_courant_faible": False,
-    "elec_releve": True, "elec_chemins": False, "elec_voisinage_nues": False, "elec_valideur_ei": "E&I / PT E&I (B2, H2, BC, HC)",
-
-    # 8. CONSIGNATION LOTO (3 PHASES)
-    "loto_ouverture_methode": "2 vannes et vanne de drain", "loto_ouvert_loc1": "Vanne V-101 Amont", "loto_ouvert_loc2": "Vanne V-102 Aval / Drain D-01",
-    "loto_is_elec": True, "loto_is_elec_loc1": "TGBT-M1-Armoire 4", "loto_is_elec_loc2": "Cadenas LOTO #884",
-    "loto_fusible": False, "loto_fusible_loc1": "", "loto_fusible_loc2": "",
-    "loto_cable": False, "loto_cable_loc1": "", "loto_cable_loc2": "",
-    "loto_pneu": False, "loto_pneu_loc1": "", "loto_pneu_loc2": "",
-    "loto_hydra": False, "loto_hydra_loc1": "", "loto_hydra_loc2": "",
-    "loto_residu": True, "loto_residu_loc1": "Purge pression résiduelle", "loto_residu_loc2": "Manomètre à 0 bar",
-    "loto_drain_ouvert": True, "loto_eq_ouvert": True, "loto_eq_lave": True, "loto_eq_sanitise": True,
-
-    # 9. SYSTÈME À RISQUES / ATEX / CHIMIQUE
-    "sr_chimique_c1": False, "sr_chimique_nom": "", "sr_fluide_dang": False, "sr_fluide_nom": "", "sr_atex": False, "sr_atex_nom": "",
-    "sr_balisage": True, "sr_douche_rince": True, "sr_ramonage": False, "sr_ramonage_dt": "01/10/2026 08:00",
-    "sr_isolement": True, "sr_feuille_loto": True, "sr_zonage_atex": True,
-    "sr_epi_ecran": True, "sr_epi_lunettes": False, "sr_epi_gants_chim": True, "sr_epi_comb1": False, "sr_epi_comb2": True,
-    "sr_epi_bottes": True, "sr_epi_cartouche": True, "sr_epi_ari": False, "sr_epi_3m6000": False, "sr_epi_versaflo": False, "sr_epi_no_versaflo": True,
-    "sr_auxiliaire_equipe": True, "sr_comm_moyen": "Talkie-Walkie ATEX",
-    "sr_inspect_remise": True, "sr_inspect_nom": "Léa DUSEK", "sr_inspect_dt": "01/10/2026 17:00",
-    "sr_schema_commentaires": "",
-    "sr_sign_intervenant": "Léa DUSEK", "sr_sign_do": "Matthieu MARTIN", "sr_sign_operations": "Alexandre LEFEBVRE"
+    "h_echaf": False, "h_echaf_montage": False, "h_echaf_montage_qualif": True, "h_echaf_montage_harnais": True, "h_echaf_util": False, "h_echaf_util_qualif": True, "h_echaf_ctrl_regle": True, "h_echaf_certif_affiche": True, "h_echaf_verif_j": True, "h_echaf_soc_util": "ABYLSEN",
+    "toiture_protection": "Garde-corps", "toiture_valideur": "Matthieu MARTIN (Habilité ePDP Accès Toiture)",
+    "chaud_gants_soudeur": False, "chaud_gants_chaleur": False, "chaud_gants_anticoupure": True, "chaud_extincteur1": "Eau + additifs", "chaud_extincteur2": "CO2", "chaud_degage_10m": True, "chaud_baches": False, "chaud_traverse_mur": False, "chaud_vigie_opposee": False, "chaud_ouverture_10m": False, "chaud_obstruction": False, "chaud_vigie_autre_cote": False, "chaud_vigie_nom": "Matthieu MARTIN", "chaud_personne_surv_60m": "Léa DUSEK", "chaud_heure_fin": "15:00", "chaud_heure_depart": "16:00", "chaud_commentaires": "",
+    "excav_plans_eaux_indus": True, "excav_plans_eaux_usees": True, "excav_plans_eaux_pluv": True, "excav_plans_eaux_incendie": True, "excav_plans_ht": True, "excav_plans_bt": True, "excav_plans_gaz": True, "excav_struct_proximite": False, "excav_architecte": False, "excav_dict": True, "excav_effondrement": False, "excav_eau_pompe": False, "excav_balisage": True, "excav_vehicule_3m": True, "excav_deblais": True, "excav_acces": "Escalier / Rampe", "excav_profondeur_130": False, "excav_blindage": False, "excav_schema_commentaires": "", "excav_chef_manoeuvre": "Léa DUSEK", "excav_do": "Matthieu MARTIN", "excav_casque_rouge": "Alexandre LEFEBVRE",
+    "grut_desc_mop": "Levage groupe froid rooftop", "grut_poids_charge": 2500.0, "grut_poids_acc": 200.0, "grut_unite": "kg", "grut_immat": "GRUE-AMIENS-88", "grut_fleche": 35.0, "grut_portee": 20.0, "grut_pression_patin": "12 T/m²", "grut_rayon": 15.0, "grut_balisage": True, "grut_plan_vue": True, "grut_plan_elev": True, "grut_obstacles": True, "grut_anemometre": True, "grut_vent_val": 18.0, "grut_vent_unite": "km/h", "grut_pesage": True, "grut_centre_gravite": True, "grut_angles_elingue": True, "grut_plaques_rep": True, "grut_chef_m_nom": "Léa DUSEK", "grut_chef_m_soc": "ABYLSEN", "grut_elingueur_nom": "Matthieu MARTIN", "grut_elingueur_soc": "ABYLSEN", "grut_grutier_nom": "Jean LEVAGE", "grut_grutier_soc": "APAVE", "grut_certif_grue": True, "grut_certif_acc": True, "grut_certif_plaques": True, "grut_check_j_grue": True, "grut_check_j_acc": True, "grut_pattes_concu": True, "grut_pattes_defaut": False, "grut_pattes_adequation": True, "grut_charges_annexes": True, "grut_schema_commentaires": "", "grut_do_sign": "Matthieu MARTIN", "grut_casque_rouge_sign": "Alexandre LEFEBVRE",
+    "conf_lieu": "Cuve C-102 Ligne 3", "conf_r_atmo": True, "conf_r_chimique": False, "conf_r_inflam": False, "conf_r_orga": False, "conf_r_meca": False, "conf_r_thermiq": False, "conf_r_bruit": False, "conf_troudhomme_610": True, "conf_catec": True, "conf_hauteur": False, "conf_m20": True, "conf_secouriste": "Attribution automatique suivant la localisation", "conf_medical": "Attribution automatique suivant la localisation", "conf_action_chaud": False, "conf_ventilation_nat": True, "conf_ventilation_forcee": True, "conf_ventilation_debit": "Minimum 56m3/h par personne", "conf_consignation_gaz": True, "conf_cuve_vide": True, "conf_vol_caches": False, "conf_eclairage_24v": True, "conf_blocage_ouvert": True, "conf_echaf_echelle": False, "conf_prod_chim": False, "conf_laser": False, "conf_comm_type": "Talkie Walkie", "conf_o2": 20.9, "conf_o2_contre_mesure": 20.9, "conf_h2s_check": False, "conf_h2s": 0.0, "conf_co_check": False, "conf_co": 0.0, "conf_explo_check": False, "conf_explo": 0.0, "conf_temp_cuve": 22.0, "conf_verif_temp": "N2", "conf_inflam_lel": 0.0, "conf_verif_lel": "N2", "conf_schema_commentaires": "", "conf_entrant": "Léa DUSEK", "conf_standby": "Matthieu MARTIN", "conf_do": "Alexandre LEFEBVRE",
+    "elec_modife": False, "elec_armoire": True, "elec_voisinage_tension": True, "elec_courant_faible": False, "elec_releve": True, "elec_chemins": False, "elec_voisinage_nues": False, "elec_valideur_ei": "E&I / PT E&I (B2, H2, BC, HC)",
+    "loto_ouverture_methode": "2 vannes et vanne de drain", "loto_ouvert_loc1": "Vanne V-101 Amont", "loto_ouvert_loc2": "Vanne V-102 Aval / Drain D-01", "loto_is_elec": True, "loto_is_elec_loc1": "TGBT-M1-Armoire 4", "loto_is_elec_loc2": "Cadenas LOTO #884", "loto_fusible": False, "loto_fusible_loc1": "", "loto_fusible_loc2": "", "loto_cable": False, "loto_cable_loc1": "", "loto_cable_loc2": "", "loto_pneu": False, "loto_pneu_loc1": "", "loto_pneu_loc2": "", "loto_hydra": False, "loto_hydra_loc1": "", "loto_hydra_loc2": "", "loto_residu": True, "loto_residu_loc1": "Purge pression résiduelle", "loto_residu_loc2": "Manomètre à 0 bar", "loto_drain_ouvert": True, "loto_eq_ouvert": True, "loto_eq_lave": True, "loto_eq_sanitise": True,
+    "sr_chimique_c1": False, "sr_chimique_nom": "", "sr_fluide_dang": False, "sr_fluide_nom": "", "sr_atex": False, "sr_atex_nom": "", "sr_balisage": True, "sr_douche_rince": True, "sr_ramonage": False, "sr_ramonage_dt": "01/10/2026 08:00", "sr_isolement": True, "sr_feuille_loto": True, "sr_zonage_atex": True, "sr_epi_ecran": True, "sr_epi_lunettes": False, "sr_epi_gants_chim": True, "sr_epi_comb1": False, "sr_epi_comb2": True, "sr_epi_bottes": True, "sr_epi_cartouche": True, "sr_epi_ari": False, "sr_epi_3m6000": False, "sr_epi_versaflo": False, "sr_epi_no_versaflo": True, "sr_auxiliaire_equipe": True, "sr_comm_moyen": "Talkie-Walkie ATEX", "sr_inspect_remise": True, "sr_inspect_nom": "Léa DUSEK", "sr_inspect_dt": "01/10/2026 17:00", "sr_schema_commentaires": "", "sr_sign_intervenant": "Léa DUSEK", "sr_sign_do": "Matthieu MARTIN", "sr_sign_operations": "Alexandre LEFEBVRE"
 }
 
 if "form_data" not in st.session_state:
@@ -364,7 +299,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             if st.button("📝 SIGNER UN PLAN DE PRÉVENTION (PDP)", use_container_width=True):
                 st.session_state.kiosk_mode = "PDP"; st.rerun()
 
-    # ÉMARGEMENT PDP DIRECT DEPUIS LA BORNE (AVEC CHAMP TÉLÉPHONE DYNAMIQUE POUR N2)
     elif st.session_state.kiosk_mode == "PDP":
         if st.button("⬅️ Retour à l'accueil"): st.session_state.kiosk_mode = "HOME"; st.rerun()
         st.subheader("📝 Émargement d'un Plan de Prévention (PDP)")
@@ -374,7 +308,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
         nom_pdp = st.text_input("Nom & Prénom de l'intervenant :")
         statut_pdp = st.selectbox("Statut sur le chantier :", ["N1 (Compagnon)", "N2 (Responsable)"])
         
-        # MODIFICATION : Champ Téléphone si N2 est sélectionné
         tel_pdp = ""
         if statut_pdp == "N2 (Responsable)":
             tel_pdp = st.text_input("Numéro de téléphone portable (Obligatoire pour le Responsable N2) :", placeholder="ex: 06 12 34 56 78")
@@ -467,7 +400,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             st.session_state.form_data["description"] = st.text_input("Description détaillée de la tâche :", value=get_val("description"))
 
             carto = db_zones_carto.get(get_val("lieu_pdp"), {})
-            # MODIFICATION : Retrait de "Urgence Ligne: 03.22.54.33.33"
             st.warning(f"📍 **Secours Secteur :** PR: `{carto.get('pr')}` | Confinement: `{carto.get('confinement')}`")
 
             c_back, c_next = st.columns(2)
@@ -476,69 +408,108 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             with c_next:
                 if st.button("Suivant ➔", type="primary"): st.session_state.step = 5; st.rerun()
 
+        # ==============================================================================
+        # ÉTAPE 5 : RESTRUCTURÉE (1. RISQUES PRINCIPAUX -> 2. STA -> 3. EPIS)
+        # ==============================================================================
         elif current_step == 5:
-            st.subheader("5. Tâches Courantes, Check-list, Permis Spécifiques & EPIs")
+            st.subheader("5. Liste des Risques Principaux, STA (Safety Task Assignment) & EPIs")
 
-            # 1. SECTION TÂCHES COURANTES
-            st.write("##### 🛠️ Tâches courantes prévues pendant l'intervention :")
-            ct1, ct2 = st.columns(2)
-            with ct1:
-                st.session_state.form_data["t_outils_electro"] = st.checkbox("Utilisation d'outils électroportatifs (perceuse, meuleuse, visseuse...)", value=get_val("t_outils_electro"))
-                st.session_state.form_data["t_meulage_poncage"] = st.checkbox("Meulage / Ponçage / Tronçonnage manuel", value=get_val("t_meulage_poncage"))
-                st.session_state.form_data["t_travaux_manuels"] = st.checkbox("Travaux manuels généraux et d'outillage à main", value=get_val("t_travaux_manuels"))
-            with ct2:
-                st.session_state.form_data["t_manutention_lourde"] = st.checkbox("Manutention manuelle de charges ou matériel", value=get_val("t_manutention_lourde"))
-                st.session_state.form_data["t_nettoyage_chantiers"] = st.checkbox("Nettoyage, rangement et rangement de zone de chantier", value=get_val("t_nettoyage_chantiers"))
-
-            # SOUS-SECTION TECHNIQUE MEULEUSE
-            if get_val("t_meulage_poncage") or get_val("t_outils_electro"):
-                with st.expander("⚙️ Détails et Caractéristiques de l'Outil Meuleuse / Tronçonneuse (Si applicable)", expanded=False):
-                    st.session_state.form_data["sta_meuleuse"] = st.checkbox("Activer la caractérisation détaillée de la meuleuse", value=get_val("sta_meuleuse"))
-                    if get_val("sta_meuleuse"):
-                        c_m1, c_m2 = st.columns(2)
-                        with c_m1:
-                            st.session_state.form_data["meuleuse_diametre"] = st.selectbox("Diamètre du disque :", ["125 mm", "230 mm"], index=0 if get_val("meuleuse_diametre") == "125 mm" else 1)
-                            st.session_state.form_data["meuleuse_marque"] = st.text_input("Marque et Modèle :", value=get_val("meuleuse_marque"))
-                        with c_m2:
-                            st.session_state.form_data["meuleuse_alim"] = st.selectbox("Alimentation :", ["Batterie 18V", "Filaire 230V", "Pneumatique"], index=0)
-                            st.session_state.form_data["meuleuse_ref"] = st.text_input("Référence / N° de série :", value=get_val("meuleuse_ref"))
-                        st.session_state.form_data["p_points_chauds"] = True
-                        st.info("🔥 **Conséquence :** L'utilisation de la meuleuse déclenche automatiquement l'ouverture du Permis Point Chaud.")
-
-            st.divider()
-
-            # 2. SECTION PERMIS SPÉCIFIQUES
-            st.error("🚨 **Sélectionnez les activités à risques déclenchant un Permis Spécifique (Étape 6) :**")
-            c_rp1, c_rp2 = st.columns(2)
-            with c_rp1:
-                st.session_state.form_data["p_hauteur"] = st.checkbox("travail en hauteur / échafaudage / nacelle", value=get_val("p_hauteur"))
+            # ------------------------------------------------------------------
+            # 1. LISTE DES RISQUES PRINCIPAUX (EN PREMIER)
+            # ------------------------------------------------------------------
+            st.error("🚨 **1. LISTE DES RISQUES PRINCIPAUX (Déclenchant un Permis Spécifique HRT à l'Étape 6) :**")
+            
+            cr1, cr2 = st.columns(2)
+            with cr1:
+                st.session_state.form_data["p_hauteur"] = st.checkbox("Travail en hauteur", value=get_val("p_hauteur"))
                 st.session_state.form_data["p_toiture"] = st.checkbox("Accès toiture", value=get_val("p_toiture"))
-                st.session_state.form_data["p_points_chauds"] = st.checkbox("Génération de point chaud / flamme", value=get_val("p_points_chauds"))
-                st.session_state.form_data["p_excavation"] = st.checkbox("tranchée, BTP, Ouverture de sol", value=get_val("p_excavation"))
+                st.session_state.form_data["p_points_chauds"] = st.checkbox("Génération de points chauds", value=get_val("p_points_chauds"))
+                st.session_state.form_data["p_excavation"] = st.checkbox("Tranchée, BTP, ouverture de sol", value=get_val("p_excavation"))
                 st.session_state.form_data["p_grutage"] = st.checkbox("Grutage", value=get_val("p_grutage"))
+                st.session_state.form_data["p_confine"] = st.checkbox("Espace confiné, risque asphyxie, anoxie (Azote)", value=get_val("p_confine"))
 
-            with c_rp2:
-                st.session_state.form_data["p_confine"] = st.checkbox("Espace confiné", value=get_val("p_confine"))
-                st.session_state.form_data["p_electrique"] = st.checkbox("travail électrique", value=get_val("p_electrique"))
-                st.session_state.form_data["p_consignation"] = st.checkbox("ouverture circuit sous pression OU machine en mouvement / parties mobiles OU équipement sous pression OU travaux à proximité de laser classe IV", value=get_val("p_consignation"))
-                st.session_state.form_data["p_systeme_risque"] = st.checkbox("risque chimique particulier, Zone ATEX, Fluides dangereux", value=get_val("p_systeme_risque"))
-                if get_val("p_systeme_risque"):
-                    st.session_state.form_data["p_consignation"] = True
+            with cr2:
+                st.session_state.form_data["p_electrique"] = st.checkbox("Travail électrique", value=get_val("p_electrique"))
+                st.session_state.form_data["p_ouverture_circuit"] = st.checkbox("Ouverture de circuit sous pression (vapeur, air, gaz, fluides chimiques)", value=get_val("p_ouverture_circuit"))
+                st.session_state.form_data["p_machines_mouvement"] = st.checkbox("Machines en mouvement, parties mobiles, risque mécaniques", value=get_val("p_machines_mouvement"))
+                st.session_state.form_data["p_equipement_pression"] = st.checkbox("Équipement sous pression", value=get_val("p_equipement_pression"))
+                st.session_state.form_data["p_laser_classe_iv"] = st.checkbox("Travaux à proximité de Lasers Classe IV", value=get_val("p_laser_classe_iv"))
+                st.session_state.form_data["p_demolition"] = st.checkbox("Démolition", value=get_val("p_demolition"))
 
-            st.divider()
+            # Synchronisation automatique avec la logique Consignation LOTO (3 phases)
+            if get_val("p_ouverture_circuit") or get_val("p_machines_mouvement") or get_val("p_equipement_pression") or get_val("p_laser_classe_iv"):
+                st.session_state.form_data["p_consignation"] = True
+            else:
+                st.session_state.form_data["p_consignation"] = False
 
-            # 3. CONDITIONNEL DÉMOLITION & DTA
-            st.write("##### 🧱 Activités Spécifiques de Structure / Bâtiment :")
-            st.session_state.form_data["act_demolition"] = st.checkbox("Démolition", value=get_val("act_demolition"))
-
-            if get_val("act_demolition"):
-                st.warning("⚠️ **Condition Activée :** Démolition sélectionnée.")
+            # Répercussion conditionnelle Démolition -> Consultation DTA
+            if get_val("p_demolition"):
+                st.warning("🧱 **Condition Activée (Démolition) :**")
                 st.session_state.form_data["dta_consultation"] = st.checkbox("Consultation DTA (Dossier Technique Amiante) effectuée et validée", value=get_val("dta_consultation"))
 
             st.divider()
 
-            # 4. SECTION EPIS DE BASE SITE P&G COMPLÈTE
-            st.write("##### 🥽 Équipements de Protection Individuelle (EPIs de Base P&G) :")
+            # ------------------------------------------------------------------
+            # 2. STA (SAFETY TASK ASSIGNMENT)
+            # ------------------------------------------------------------------
+            st.write("##### 🛠️ 2. STA (Safety Task Assignment) & Caractérisation des Outils :")
+
+            # STA 1: Produits chimiques
+            st.session_state.form_data["sta_prod_chimiques"] = st.checkbox("Produits chimiques utilisés ou manipulés lors de l'intervention", value=get_val("sta_prod_chimiques"))
+            if get_val("sta_prod_chimiques"):
+                st.session_state.form_data["sta_prod_chimiques_nom"] = st.text_input("Veuillez indiquer le(s) produit(s) chimique(s) concerné(s) :", value=get_val("sta_prod_chimiques_nom"), placeholder="ex: Solvant, Acide Chlorhydrique, Soude...")
+                st.session_state.form_data["p_systeme_risque"] = True
+                st.info("☣ **Répercussion :** L'utilisation de produits chimiques déclenche l'ouverture du permis Systèmes à Risques.")
+
+            # STA 2: Meuleuse / Tronçonneuse
+            st.session_state.form_data["sta_meuleuse"] = st.checkbox("Utilisation d'une Meuleuse / Tronçonneuse", value=get_val("sta_meuleuse"))
+            if get_val("sta_meuleuse"):
+                st.session_state.form_data["p_points_chauds"] = True
+                st.info("🔥 **Répercussion :** L'utilisation de la meuleuse déclenche automatiquement l'ouverture du Permis Point Chaud.")
+                
+                with st.expander("⚙️ Détails et Caractéristiques Complètes de la Meuleuse / Tronçonneuse", expanded=True):
+                    c_m1, c_m2 = st.columns(2)
+                    with c_m1:
+                        st.session_state.form_data["meuleuse_diametre"] = st.selectbox("Diamètre du disque :", ["125 mm", "230 mm"], index=0 if get_val("meuleuse_diametre") == "125 mm" else 1)
+                        st.session_state.form_data["meuleuse_marque"] = st.text_input("Marque et Modèle :", value=get_val("meuleuse_marque"))
+                    with c_m2:
+                        st.session_state.form_data["meuleuse_alim"] = st.selectbox("Alimentation :", ["Batterie 18V", "Filaire 230V", "Pneumatique"], index=0)
+                        st.session_state.form_data["meuleuse_ref"] = st.text_input("Référence / N° de série :", value=get_val("meuleuse_ref"))
+
+                    st.write("##### Opérations effectuées avec la meuleuse :")
+                    cm_op1, cm_op2 = st.columns(2)
+                    with cm_op1:
+                        st.session_state.form_data["meuleuse_u_decoupe"] = st.checkbox("Découpe", value=get_val("meuleuse_u_decoupe"))
+                        if get_val("meuleuse_u_decoupe"):
+                            st.session_state.form_data["meuleuse_mat_decoupe"] = st.selectbox("Matériau découpé :", db_materiaux, index=0)
+                        
+                        st.session_state.form_data["meuleuse_u_ebavurage"] = st.checkbox("Ébavurage / Meulage", value=get_val("meuleuse_u_ebavurage"))
+                        if get_val("meuleuse_u_ebavurage"):
+                            st.session_state.form_data["meuleuse_mat_ebavurage"] = st.selectbox("Matériau ébavuré :", db_materiaux, index=0)
+
+                    with cm_op2:
+                        st.session_state.form_data["meuleuse_u_flap"] = st.checkbox("Ponçage disque à lamelles (Flap)", value=get_val("meuleuse_u_flap"))
+                        st.session_state.form_data["meuleuse_u_blanchiment"] = st.checkbox("Blanchiment / Nettoyage de surface", value=get_val("meuleuse_u_blanchiment"))
+                        if get_val("meuleuse_u_blanchiment"):
+                            st.session_state.form_data["meuleuse_disque_blanchiment"] = st.selectbox("Type de disque blanchiment :", db_disques_blanchiment, index=0)
+
+            # STA 3: Autres Tâches et Outils Courants
+            st.write("##### Autres tâches courantes et outillages prévus :")
+            ct1, ct2 = st.columns(2)
+            with ct1:
+                st.session_state.form_data["t_outils_electro"] = st.checkbox("Utilisation d'outils électroportatifs généraux (perceuse, visseuse...)", value=get_val("t_outils_electro"))
+                st.session_state.form_data["t_meulage_poncage"] = st.checkbox("Ponçage / Meulage manuel", value=get_val("t_meulage_poncage"))
+                st.session_state.form_data["t_travaux_manuels"] = st.checkbox("Travaux manuels généraux et d'outillage à main", value=get_val("t_travaux_manuels"))
+            with ct2:
+                st.session_state.form_data["t_manutention_lourde"] = st.checkbox("Manutention manuelle de charges ou matériel", value=get_val("t_manutention_lourde"))
+                st.session_state.form_data["t_nettoyage_chantiers"] = st.checkbox("Nettoyage et rangement de zone de chantier", value=get_val("t_nettoyage_chantiers"))
+
+            st.divider()
+
+            # ------------------------------------------------------------------
+            # 3. EPIS DE BASE SITE P&G
+            # ------------------------------------------------------------------
+            st.write("##### 🥽 3. Équipements de Protection Individuelle (EPIs de Base P&G) :")
             cepi_b1, cepi_b2 = st.columns(2)
             with cepi_b1:
                 st.session_state.form_data["epi_lunettes_securite"] = st.checkbox("Lunettes de sécurité avec protections latérales (Obligatoire)", value=get_val("epi_lunettes_securite"))
@@ -660,7 +631,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.error(f"❌ **ACCÈS REFUSÉ POUR CAUSE DE CONDITIONS MÉTÉOROLOGIQUES :** {', '.join(reasons)}")
                 else:
                     if 30 <= vent_val <= 36:
-                        st.warning(f"⚠️️ **Entre 30 et 36 km/h : vigilance** ({vent_val} km/h)")
+                        st.warning(f"⚠️ **Entre 30 et 36 km/h : vigilance** ({vent_val} km/h)")
                     st.success("✅ **CONDITIONS FAVORABLES**")
                     st.info("📣 **Rappel des conditions :** Accès à deux personnes impérativement - un intervenant ne doit jamais rester seul sur la toiture")
                     st.session_state.form_data["toiture_valideur"] = st.text_input("Validation de l'accès toiture par une personne habilité à signer les accès toiture (Attribution dans le profil ePDP) :", value=get_val("toiture_valideur"))
@@ -1207,7 +1178,7 @@ else:
         
         st.table(p.get("tableau_risques", []))
         
-        if st.button("✍️️ Valider la Ronde de Sécurité Point Chaud (60 min)"):
+        if st.button("✍️ Valider la Ronde de Sécurité Point Chaud (60 min)"):
             st.success("Ronde de sécurité validée et horodatée par le Casque Rouge.")
     else:
         st.info("Aucun permis émis pour le moment. Veuillez créer un permis sur la borne Kiosk.")
