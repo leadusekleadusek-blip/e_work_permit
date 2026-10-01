@@ -138,6 +138,13 @@ VALEURS_PAR_DEFAUT = {
     "description": "Maintenance et travaux sur site",
     "intervenants": ["Léa DUSEK", "Matthieu MARTIN"],
     
+    # TÂCHES / OUTILS DÉCLARÉES À L'ÉTAPE 5
+    "t_outils_electro": True,
+    "t_meulage_poncage": False,
+    "t_travaux_manuels": True,
+    "t_manutention_lourde": False,
+    "t_nettoyage_chantiers": True,
+
     # PERMIS SPÉCIFIQUES DÉCLENCHEURS (ÉTAPE 5)
     "p_hauteur": False, "p_toiture": False, "p_points_chauds": False, "p_excavation": False,
     "p_grutage": False, "p_confine": False, "p_electrique": False, "p_consignation": False, "p_systeme_risque": False,
@@ -146,7 +153,12 @@ VALEURS_PAR_DEFAUT = {
     "act_demolition": False,
     "dta_consultation": False,
 
-    # EPIs DE BASE & RAJOUTS AUTOMATIQUES
+    # EPIs DE BASE SITE P&G
+    "epi_lunettes_securite": True,
+    "epi_chaussures_s3": True,
+    "epi_casque_chantiers": True,
+    "epi_gants_manutention": True,
+    "epi_protections_auditives": False,
     "epi_casque_jugulaire_obli": False,
 
     # 1. HAUTEUR / NACELLE / ÉCHAFAUDAGE
@@ -425,12 +437,26 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 if st.button("Suivant ➔", type="primary"): st.session_state.step = 5; st.rerun()
 
         # ==============================================================================
-        # ÉTAPE 5 : COCHES ACTIVITÉS, DÉMOLITION/DTA & RAJOUTS SYSTEMATIQUES D'EPIs
+        # ÉTAPE 5 : TÂCHES COURANTES, PERMIS SPÉCIFIQUES, DÉMOLITION/DTA & EPIs DE BASE
         # ==============================================================================
         elif current_step == 5:
-            st.subheader("5. Check-list, Permis Spécifiques à Déclencher & EPIs")
+            st.subheader("5. Tâches Courantes, Check-list, Permis Spécifiques & EPIs")
 
-            st.error("🚨 **Sélectionnez les activités de votre intervention :**")
+            # 1. SECTION TÂCHES COURANTES
+            st.write("##### 🛠️ Tâches courantes prévues pendant l'intervention :")
+            ct1, ct2 = st.columns(2)
+            with ct1:
+                st.session_state.form_data["t_outils_electro"] = st.checkbox("Utilisation d'outils électroportatifs (perceuse, meuleuse, visseuse...)", value=get_val("t_outils_electro"))
+                st.session_state.form_data["t_meulage_poncage"] = st.checkbox("Meulage / Ponçage / Tronçonnage manuel", value=get_val("t_meulage_poncage"))
+                st.session_state.form_data["t_travaux_manuels"] = st.checkbox("Travaux manuels généraux et d'outillage à main", value=get_val("t_travaux_manuels"))
+            with ct2:
+                st.session_state.form_data["t_manutention_lourde"] = st.checkbox("Manutention manuelle de charges ou matériel", value=get_val("t_manutention_lourde"))
+                st.session_state.form_data["t_nettoyage_chantiers"] = st.checkbox("Nettoyage, rangement et rangement de zone de chantier", value=get_val("t_nettoyage_chantiers"))
+
+            st.divider()
+
+            # 2. SECTION PERMIS SPÉCIFIQUES
+            st.error("🚨 **Sélectionnez les activités à risques déclenchant un Permis Spécifique (Étape 6) :**")
             c_rp1, c_rp2 = st.columns(2)
             with c_rp1:
                 st.session_state.form_data["p_hauteur"] = st.checkbox("travail en hauteur / échafaudage / nacelle", value=get_val("p_hauteur"))
@@ -449,21 +475,31 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
             st.divider()
 
-            # CONDITIONNEL DEMOLITION & DTA
+            # 3. CONDITIONNEL DÉMOLITION & DTA
             st.write("##### 🧱 Activités Spécifiques de Structure / Bâtiment :")
             st.session_state.form_data["act_demolition"] = st.checkbox("Démolition", value=get_val("act_demolition"))
 
-            # La question "Consultation DTA" s'affiche uniquement si "Démolition" est cochée.
             if get_val("act_demolition"):
                 st.warning("⚠️ **Condition Activée :** Démolition sélectionnée.")
                 st.session_state.form_data["dta_consultation"] = st.checkbox("Consultation DTA (Dossier Technique Amiante) effectuée et validée", value=get_val("dta_consultation"))
 
             st.divider()
-            st.write("##### 🥽 Équipements de Protection Individuelle (EPIs) :")
 
+            # 4. SECTION EPIS DE BASE ET RAJOUTS
+            st.write("##### 🥽 Équipements de Protection Individuelle (EPIs de Base P&G) :")
+            cepi_b1, cepi_b2 = st.columns(2)
+            with cepi_b1:
+                st.session_state.form_data["epi_lunettes_securite"] = st.checkbox("Lunettes de sécurité avec protections latérales (Obligatoire)", value=get_val("epi_lunettes_securite"))
+                st.session_state.form_data["epi_chaussures_s3"] = st.checkbox("Chaussures de sécurité S3 (Obligatoire)", value=get_val("epi_chaussures_s3"))
+                st.session_state.form_data["epi_casque_chantiers"] = st.checkbox("Casque de chantier standard", value=get_val("epi_casque_chantiers"))
+            with cepi_b2:
+                st.session_state.form_data["epi_gants_manutention"] = st.checkbox("Gants de manutention anti-coupure / mécaniques", value=get_val("epi_gants_manutention"))
+                st.session_state.form_data["epi_protections_auditives"] = st.checkbox("Protections auditives (bouchons / casque antibruit)", value=get_val("epi_protections_auditives"))
+
+            st.write("##### ➕ Ajustement Automatique des EPIs Spécifiques :")
             if get_val("p_hauteur") or get_val("p_toiture"):
                 st.session_state.form_data["epi_casque_jugulaire_obli"] = True
-                st.warning("🥽 **EPI rajouté automatiquement dans l'étape 5 :** Casque avec jugulaire obligatoire.")
+                st.warning("🥽 **EPI rajouté automatiquement :** Casque avec jugulaire obligatoire.")
             else:
                 st.session_state.form_data["epi_casque_jugulaire_obli"] = False
 
@@ -965,7 +1001,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             # 9. PERMIS SYSTÈME À RISQUES / ATEX / FLUIDES DANGEREUX
             # ---------------------------------------------------------
             if get_val("p_systeme_risque"):
-                st.error("☣️️ **PERMIS SYSTÈME À RISQUE**")
+                st.error("☣ **PERMIS SYSTÈME À RISQUE**")
                 st.info("Ouverture du permis consignation (renvoi au même truc au-dessus) effectuée.")
 
                 st.write("##### Case à cocher :")
