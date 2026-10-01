@@ -113,10 +113,10 @@ db_mops = {
 db_n2 = ["Léa DUSEK", "Matthieu MARTIN", "Alexandre LEFEBVRE", "Cindy BERNARD"]
 
 db_zones_carto = {
-    "Bâtiment M1 - Zone Production": {"pr": "PR-2 (Parking Ouest)", "confinement": "ZC-01 (Hall M1)", "urgence": "03.22.54.33.33", "sprinkler": True, "detection": True},
-    "Bâtiment M1 - Bureaux / Toiture": {"pr": "PR-2 (Parking Ouest)", "confinement": "ZC-01 (Hall M1)", "urgence": "03.22.54.30.00", "sprinkler": False, "detection": True},
-    "Bâtiment M2 - Conditionnement": {"pr": "PR-4 (Zone Nord)", "confinement": "ZC-03 (Atrium M2)", "urgence": "03.22.54.33.34", "sprinkler": True, "detection": True},
-    "Zone Extérieure / Logistique / TP": {"pr": "PR-1 (Entrée Principale)", "confinement": "ZC-00 (Poste Central)", "urgence": "03.22.54.33.33", "sprinkler": False, "detection": False}
+    "Bâtiment M1 - Zone Production": {"pr": "PR-2 (Parking Ouest)", "confinement": "ZC-01 (Hall M1)", "sprinkler": True, "detection": True},
+    "Bâtiment M1 - Bureaux / Toiture": {"pr": "PR-2 (Parking Ouest)", "confinement": "ZC-01 (Hall M1)", "sprinkler": False, "detection": True},
+    "Bâtiment M2 - Conditionnement": {"pr": "PR-4 (Zone Nord)", "confinement": "ZC-03 (Atrium M2)", "sprinkler": True, "detection": True},
+    "Zone Extérieure / Logistique / TP": {"pr": "PR-1 (Entrée Principale)", "confinement": "ZC-00 (Poste Central)", "sprinkler": False, "detection": False}
 }
 
 db_materiaux = ["Acier / Carbone", "Inox 316L / 304L", "Aluminium", "Béton / Maçonnerie", "PVC / Plastique"]
@@ -146,14 +146,14 @@ VALEURS_PAR_DEFAUT = {
     "description": "Maintenance et travaux sur site",
     "intervenants": ["Léa DUSEK", "Matthieu MARTIN"],
     
-    # TÂCHES / OUTILS DÉCLARÉES À L'ÉTAPE 5 (TOUTES CONSERVÉES)
+    # TÂCHES / OUTILS DÉCLARÉES À L'ÉTAPE 5
     "t_outils_electro": True,
     "t_meulage_poncage": False,
     "t_travaux_manuels": True,
     "t_manutention_lourde": False,
     "t_nettoyage_chantiers": True,
 
-    # OUTILLAGE DÉTAILLÉ / MEULEUSE (NOUVEAUTÉ INTÉGRÉE)
+    # OUTILLAGE DÉTAILLÉ / MEULEUSE
     "sta_meuleuse": False,
     "meuleuse_diametre": "125 mm", "meuleuse_operateurs": ["Léa DUSEK"], "meuleuse_marque": "Bosch Pro", "meuleuse_alim": "Batterie 18V", "meuleuse_ref": "MEU-042", "meuleuse_vitesse": "11000",
     "meu_env_plain_pied": True, "meu_env_hauteur": False, "meu_env_confine": False, "meu_env_excavation": False, "meu_env_stable": True, "meu_env_maintien_2mains": True, "meu_env_piece_fixee": True, "meu_env_hors_ligne_tir": True, "meu_position_op": "Debout",
@@ -167,7 +167,7 @@ VALEURS_PAR_DEFAUT = {
     "act_demolition": False,
     "dta_consultation": False,
 
-    # EPIs DE BASE SITE P&G (TOUS CONSERVÉS)
+    # EPIs DE BASE SITE P&G
     "epi_lunettes_securite": True,
     "epi_chaussures_s3": True,
     "epi_casque_chantiers": True,
@@ -364,7 +364,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             if st.button("📝 SIGNER UN PLAN DE PRÉVENTION (PDP)", use_container_width=True):
                 st.session_state.kiosk_mode = "PDP"; st.rerun()
 
-    # NOUVEAUTÉ : ÉMARGEMENT PDP DIRECT DEPUIS LA BORNE
+    # ÉMARGEMENT PDP DIRECT DEPUIS LA BORNE (AVEC CHAMP TÉLÉPHONE DYNAMIQUE POUR N2)
     elif st.session_state.kiosk_mode == "PDP":
         if st.button("⬅️ Retour à l'accueil"): st.session_state.kiosk_mode = "HOME"; st.rerun()
         st.subheader("📝 Émargement d'un Plan de Prévention (PDP)")
@@ -373,9 +373,18 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
         pdp_sel = st.selectbox(f"2. Plans de Prévention enregistrés pour {soc_pdp} :", db_pdps.get(soc_pdp, ["Aucun PDP"]))
         nom_pdp = st.text_input("Nom & Prénom de l'intervenant :")
         statut_pdp = st.selectbox("Statut sur le chantier :", ["N1 (Compagnon)", "N2 (Responsable)"])
+        
+        # MODIFICATION : Champ Téléphone si N2 est sélectionné
+        tel_pdp = ""
+        if statut_pdp == "N2 (Responsable)":
+            tel_pdp = st.text_input("Numéro de téléphone portable (Obligatoire pour le Responsable N2) :", placeholder="ex: 06 12 34 56 78")
+
         st.info(" [ Zone de Signature Tactile / Empreinte Stylet ] ")
         if st.button("✅ VALIDER L'ÉMARGEMENT DU PDP", type="primary", use_container_width=True):
-            st.balloons(); st.success(f"Émargement validé pour {nom_pdp} !"); st.session_state.kiosk_mode = "HOME"
+            if statut_pdp == "N2 (Responsable)" and not tel_pdp.strip():
+                st.error("⚠️ Veuillez renseigner votre numéro de téléphone avant de valider.")
+            else:
+                st.balloons(); st.success(f"Émargement validé pour {nom_pdp} ({statut_pdp}) !"); st.session_state.kiosk_mode = "HOME"
 
     elif st.session_state.kiosk_mode == "PERMIS":
         current_step = st.session_state.step
@@ -458,7 +467,8 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             st.session_state.form_data["description"] = st.text_input("Description détaillée de la tâche :", value=get_val("description"))
 
             carto = db_zones_carto.get(get_val("lieu_pdp"), {})
-            st.warning(f"📍 **Secours Secteur :** PR: `{carto.get('pr')}` | Confinement: `{carto.get('confinement')}` | Urgence Ligne: `{carto.get('urgence')}`")
+            # MODIFICATION : Retrait de "Urgence Ligne: 03.22.54.33.33"
+            st.warning(f"📍 **Secours Secteur :** PR: `{carto.get('pr')}` | Confinement: `{carto.get('confinement')}`")
 
             c_back, c_next = st.columns(2)
             with c_back:
@@ -466,13 +476,10 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             with c_next:
                 if st.button("Suivant ➔", type="primary"): st.session_state.step = 5; st.rerun()
 
-        # ==============================================================================
-        # ÉTAPE 5 : CONSERVÉE 100% AVEC VOS TÂCHES & EPIS DE BASE + INTÉGRATION DE LA MEULEUSE
-        # ==============================================================================
         elif current_step == 5:
             st.subheader("5. Tâches Courantes, Check-list, Permis Spécifiques & EPIs")
 
-            # 1. SECTION TÂCHES COURANTES COMPLÈTE
+            # 1. SECTION TÂCHES COURANTES
             st.write("##### 🛠️ Tâches courantes prévues pendant l'intervention :")
             ct1, ct2 = st.columns(2)
             with ct1:
@@ -483,7 +490,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 st.session_state.form_data["t_manutention_lourde"] = st.checkbox("Manutention manuelle de charges ou matériel", value=get_val("t_manutention_lourde"))
                 st.session_state.form_data["t_nettoyage_chantiers"] = st.checkbox("Nettoyage, rangement et rangement de zone de chantier", value=get_val("t_nettoyage_chantiers"))
 
-            # NOUVEAUTÉ : SOUS-SECTION TECHNIQUE MEULEUSE
+            # SOUS-SECTION TECHNIQUE MEULEUSE
             if get_val("t_meulage_poncage") or get_val("t_outils_electro"):
                 with st.expander("⚙️ Détails et Caractéristiques de l'Outil Meuleuse / Tronçonneuse (Si applicable)", expanded=False):
                     st.session_state.form_data["sta_meuleuse"] = st.checkbox("Activer la caractérisation détaillée de la meuleuse", value=get_val("sta_meuleuse"))
@@ -495,7 +502,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                         with c_m2:
                             st.session_state.form_data["meuleuse_alim"] = st.selectbox("Alimentation :", ["Batterie 18V", "Filaire 230V", "Pneumatique"], index=0)
                             st.session_state.form_data["meuleuse_ref"] = st.text_input("Référence / N° de série :", value=get_val("meuleuse_ref"))
-                        # Déclenchement automatique du permis Point Chaud si meuleuse active
                         st.session_state.form_data["p_points_chauds"] = True
                         st.info("🔥 **Conséquence :** L'utilisation de la meuleuse déclenche automatiquement l'ouverture du Permis Point Chaud.")
 
@@ -654,7 +660,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.error(f"❌ **ACCÈS REFUSÉ POUR CAUSE DE CONDITIONS MÉTÉOROLOGIQUES :** {', '.join(reasons)}")
                 else:
                     if 30 <= vent_val <= 36:
-                        st.warning(f"⚠️ **Entre 30 et 36 km/h : vigilance** ({vent_val} km/h)")
+                        st.warning(f"⚠️️ **Entre 30 et 36 km/h : vigilance** ({vent_val} km/h)")
                     st.success("✅ **CONDITIONS FAVORABLES**")
                     st.info("📣 **Rappel des conditions :** Accès à deux personnes impérativement - un intervenant ne doit jamais rester seul sur la toiture")
                     st.session_state.form_data["toiture_valideur"] = st.text_input("Validation de l'accès toiture par une personne habilité à signer les accès toiture (Attribution dans le profil ePDP) :", value=get_val("toiture_valideur"))
@@ -1201,7 +1207,7 @@ else:
         
         st.table(p.get("tableau_risques", []))
         
-        if st.button("✍️ Valider la Ronde de Sécurité Point Chaud (60 min)"):
+        if st.button("✍️️ Valider la Ronde de Sécurité Point Chaud (60 min)"):
             st.success("Ronde de sécurité validée et horodatée par le Casque Rouge.")
     else:
         st.info("Aucun permis émis pour le moment. Veuillez créer un permis sur la borne Kiosk.")
