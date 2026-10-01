@@ -29,11 +29,18 @@ st.markdown("""
         background: white; border: 1px solid #cbd5e1; padding: 30px; border-radius: 12px;
         text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px;
     }
-    .weather-card {
-        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-        border: 1px solid #0284c7; padding: 12px 18px; border-radius: 10px;
-        margin-bottom: 20px; color: #0369a1;
+    .weather-container {
+        border-radius: 12px; padding: 18px 24px; margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.3s ease;
     }
+    .weather-ok { background-color: #dcfce7; border: 2px solid #22c55e; color: #15803d; }
+    .weather-warning { background-color: #fef08a; border: 2px solid #eab308; color: #a16207; }
+    .weather-alert { background-color: #fef2f2; border: 2px solid #ef4444; color: #b91c1c; }
+    
+    .weather-flex { display: flex; align-items: center; gap: 25px; }
+    .weather-icon-large { font-size: 4rem; line-height: 1; }
+    .weather-details { flex-grow: 1; }
+    
     .urgence-card {
         background-color: #fef2f2; border: 2px solid #ef4444; color: #991b1b;
         padding: 18px; border-radius: 10px; margin-bottom: 20px;
@@ -70,26 +77,41 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# MÉTÉO EN DIRECT (OPEN-METEO API)
+# MÉTÉO EN DIRECT — ZONE INDUSTRIELLE AMIENS NORD
 # ---------------------------------------------------------
 @st.cache_data(ttl=1800)
 def obtenir_meteo_amiens_live():
     try:
-        url = "https://api.open-meteo.com/v1/forecast?latitude=49.8941&longitude=2.2957&daily=temperature_2m_max,temperature_2m_min,windgusts_10m_max,weathercode&timezone=Europe%2FParis"
+        # Coordonnées GPS ajustées sur la Zone Industrielle Amiens Nord (49.9250, 2.2900)
+        url = "https://api.open-meteo.com/v1/forecast?latitude=49.9250&longitude=2.2900&daily=temperature_2m_max,temperature_2m_min,windgusts_10m_max,weathercode&timezone=Europe%2FParis"
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req, timeout=3) as response:
             data = json.loads(response.read().decode())
+            code = data['daily']['weathercode'][0]
+            
+            # Détermination de l'icône
+            if code in [0, 1]: icon = "☀️"
+            elif code in [2, 3]: icon = "⛅"
+            elif code in [45, 48]: icon = "🌫️"
+            elif code in [51, 53, 55, 61, 63, 65, 80, 81, 82]: icon = "🌧️"
+            elif code in [95, 96, 99]: icon = "🌩️"
+            else: icon = "☁️"
+
+            vent = round(data['daily']['windgusts_10m_max'][0])
+            if vent >= 30: icon = "💨"
+
             return {
                 "temp_max_j0": round(data['daily']['temperature_2m_max'][0]),
                 "temp_min_j0": round(data['daily']['temperature_2m_min'][0]),
-                "vent_j0": round(data['daily']['windgusts_10m_max'][0]),
-                "code_w_j0": data['daily']['weathercode'][0],
+                "vent_j0": vent,
+                "code_w_j0": code,
+                "icon_j0": icon,
                 "temp_max_j1": round(data['daily']['temperature_2m_max'][1]),
                 "vent_j1": round(data['daily']['windgusts_10m_max'][1]),
-                "source": "Open-Meteo Live API"
+                "source": "Open-Meteo Live API (ZI Amiens Nord)"
             }
     except Exception:
-        return {"temp_max_j0": 18, "temp_min_j0": 8, "vent_j0": 14, "code_w_j0": 0, "temp_max_j1": 19, "vent_j1": 12, "source": "Mode Secours"}
+        return {"temp_max_j0": 18, "temp_min_j0": 8, "vent_j0": 14, "code_w_j0": 0, "icon_j0": "☀️", "temp_max_j1": 19, "vent_j1": 12, "source": "Mode Secours (ZI Amiens Nord)"}
 
 # ---------------------------------------------------------
 # RÉFÉRENTIELS & BDD P&G
@@ -383,7 +405,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
             c_back, c_next = st.columns(2)
             with c_back:
-                if st.button("⬅️ Précédent"): st.session_state.step = 1; st.rerun()
+                if st.button("⬅️️ Précédent"): st.session_state.step = 1; st.rerun()
             with c_next:
                 if st.button("Suivant ➔", type="primary"): st.session_state.step = 3; st.rerun()
 
@@ -429,14 +451,38 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             st.subheader("5. Analyse des Risques, STA & Équipements de Protection Individuelle")
 
             # ------------------------------------------------------------------
-            # 0. ENCART MÉTÉO DYNAMIQUE
+            # 0. ENCART MÉTÉO VISUEL DYNAMIQUE (AMIENS NORD) AVEC SEUILS DE COULEUR
             # ------------------------------------------------------------------
             meteo_live = obtenir_meteo_amiens_live()
+            temp_max = meteo_live['temp_max_j0']
+            vent = meteo_live['vent_j0']
+            
+            # Évaluation de la couleur et des conditions météo
+            if vent > 36 or temp_max < 3 or temp_max > 30:
+                weather_class = "weather-alert"
+                status_msg = "❌ <b>CONDITIONS DÉFAVORABLES / ALERTE MÉTÉO</b> (Vent > 36 km/h ou T° extrême) — Travaux spécifiques soumis à restriction/dérogation Casque Rouge."
+            elif 30 <= vent <= 36:
+                weather_class = "weather-warning"
+                status_msg = "⚠️ <b>VIGILANCE MÉTÉO</b> (Vent entre 30 et 36 km/h) — Attention renforcée pour les travaux en extérieur et en hauteur."
+            else:
+                weather_class = "weather-ok"
+                status_msg = "✅ <b>CONDITIONS FAVORABLES</b> — Tous les travaux extérieurs et en hauteur sont autorisés."
+
             st.markdown(f"""
-            <div class='weather-card'>
-                🌤️ <b>MÉTÉO EN DIRECT — STATION AMIENS-DURY (Source: {meteo_live['source']}) :</b><br>
-                • <b>Aujourd'hui :</b> Temp. Min {meteo_live['temp_min_j0']}°C / Max {meteo_live['temp_max_j0']}°C | 💨 Rafales de vent max : <b>{meteo_live['vent_j0']} km/h</b><br>
-                • <b>Demain (J+1) :</b> Temp. Max {meteo_live['temp_max_j1']}°C | 💨 Rafales : {meteo_live['vent_j1']} km/h
+            <div class='weather-container {weather_class}'>
+                <div class='weather-flex'>
+                    <div class='weather-icon-large'>{meteo_live['icon_j0']}</div>
+                    <div class='weather-details'>
+                        <div style='font-size:1.1rem; font-weight:bold; margin-bottom:4px;'>
+                            MÉTÉO EN DIRECT — ZONE INDUSTRIELLE AMIENS NORD
+                        </div>
+                        <div>
+                            • <b>Aujourd'hui :</b> Temp. Min <b>{meteo_live['temp_min_j0']}°C</b> / Max <b>{meteo_live['temp_max_j0']}°C</b> | 💨 Rafales de vent max : <b>{vent} km/h</b><br>
+                            • <b>Demain (J+1) :</b> Temp. Max {meteo_live['temp_max_j1']}°C | 💨 Rafales : {meteo_live['vent_j1']} km/h
+                        </div>
+                        <div style='margin-top:8px;'>{status_msg}</div>
+                    </div>
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -671,7 +717,8 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 else:
                     if 30 <= vent_val <= 36:
                         st.warning(f"⚠️ **Entre 30 et 36 km/h : vigilance** ({vent_val} km/h)")
-                    st.success("✅ **CONDITIONS FAVORABLES**")
+                    else:
+                        st.success("✅ **CONDITIONS FAVORABLES**")
                     st.info("📣 **Rappel des conditions :** Accès à deux personnes impérativement - un intervenant ne doit jamais rester seul sur la toiture")
                     st.session_state.form_data["toiture_valideur"] = st.text_input("Validation de l'accès toiture par une personne habilité à signer les accès toiture (Attribution dans le profil ePDP) :", value=get_val("toiture_valideur"))
                 st.divider()
