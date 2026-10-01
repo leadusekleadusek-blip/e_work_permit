@@ -43,6 +43,11 @@ st.markdown("""
         padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.1rem;
         margin-bottom: 15px;
     }
+    .status-validated {
+        background-color: #dcfce7; color: #166534; border: 2px solid #22c55e;
+        padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.1rem;
+        margin-bottom: 15px;
+    }
     .stButton>button { border-radius: 8px; font-weight: bold; }
     div[data-baseweb="input"] { background-color: #e0f2fe !important; border: 1.5px solid #0284c7 !important; border-radius: 8px !important; }
     div[data-baseweb="select"] > div { background-color: #e0f2fe !important; border: 1.5px solid #0284c7 !important; border-radius: 8px !important; }
@@ -108,11 +113,14 @@ db_mops = {
 db_n2 = ["Léa DUSEK", "Matthieu MARTIN", "Alexandre LEFEBVRE", "Cindy BERNARD"]
 
 db_zones_carto = {
-    "Bâtiment M1 - Zone Production": {"pr": "PR-2 (Parking Ouest)", "confinement": "ZC-01 (Hall M1)", "sprinkler": True, "detection": True},
-    "Bâtiment M1 - Bureaux / Toiture": {"pr": "PR-2 (Parking Ouest)", "confinement": "ZC-01 (Hall M1)", "sprinkler": False, "detection": True},
-    "Bâtiment M2 - Conditionnement": {"pr": "PR-4 (Zone Nord)", "confinement": "ZC-03 (Atrium M2)", "sprinkler": True, "detection": True},
-    "Zone Extérieure / Logistique / TP": {"pr": "PR-1 (Entrée Principale)", "confinement": "ZC-00 (Poste Central)", "sprinkler": False, "detection": False}
+    "Bâtiment M1 - Zone Production": {"pr": "PR-2 (Parking Ouest)", "confinement": "ZC-01 (Hall M1)", "urgence": "03.22.54.33.33", "sprinkler": True, "detection": True},
+    "Bâtiment M1 - Bureaux / Toiture": {"pr": "PR-2 (Parking Ouest)", "confinement": "ZC-01 (Hall M1)", "urgence": "03.22.54.30.00", "sprinkler": False, "detection": True},
+    "Bâtiment M2 - Conditionnement": {"pr": "PR-4 (Zone Nord)", "confinement": "ZC-03 (Atrium M2)", "urgence": "03.22.54.33.34", "sprinkler": True, "detection": True},
+    "Zone Extérieure / Logistique / TP": {"pr": "PR-1 (Entrée Principale)", "confinement": "ZC-00 (Poste Central)", "urgence": "03.22.54.33.33", "sprinkler": False, "detection": False}
 }
+
+db_materiaux = ["Acier / Carbone", "Inox 316L / 304L", "Aluminium", "Béton / Maçonnerie", "PVC / Plastique"]
+db_disques_blanchiment = ["Disque fibre abrasif", "Brosse métallique torsadée", "Clean & Strip"]
 
 etapes_noms = ["Date & EE", "PDP & MoP", "Responsable N2", "Zone & Urgences", "Check-list & EPIs", "Permis Spécifiques (HRT)", "Synthèse & Signatures"]
 
@@ -124,7 +132,7 @@ if "kiosk_mode" not in st.session_state:
 if "step" not in st.session_state:
     st.session_state.step = 1
 
-# INITIALISATION EXHAUSTIVE ET SÉCURISÉE DE FORM_DATA
+# INITIALISATION EXHAUSTIVE DE FORM_DATA
 VALEURS_PAR_DEFAUT = {
     "date_str": datetime.date.today().strftime("%d/%m/%Y"),
     "societe": "ABYLSEN",
@@ -138,12 +146,18 @@ VALEURS_PAR_DEFAUT = {
     "description": "Maintenance et travaux sur site",
     "intervenants": ["Léa DUSEK", "Matthieu MARTIN"],
     
-    # TÂCHES / OUTILS DÉCLARÉES À L'ÉTAPE 5
+    # TÂCHES / OUTILS DÉCLARÉES À L'ÉTAPE 5 (TOUTES CONSERVÉES)
     "t_outils_electro": True,
     "t_meulage_poncage": False,
     "t_travaux_manuels": True,
     "t_manutention_lourde": False,
     "t_nettoyage_chantiers": True,
+
+    # OUTILLAGE DÉTAILLÉ / MEULEUSE (NOUVEAUTÉ INTÉGRÉE)
+    "sta_meuleuse": False,
+    "meuleuse_diametre": "125 mm", "meuleuse_operateurs": ["Léa DUSEK"], "meuleuse_marque": "Bosch Pro", "meuleuse_alim": "Batterie 18V", "meuleuse_ref": "MEU-042", "meuleuse_vitesse": "11000",
+    "meu_env_plain_pied": True, "meu_env_hauteur": False, "meu_env_confine": False, "meu_env_excavation": False, "meu_env_stable": True, "meu_env_maintien_2mains": True, "meu_env_piece_fixee": True, "meu_env_hors_ligne_tir": True, "meu_position_op": "Debout",
+    "meuleuse_u_decoupe": False, "meuleuse_mat_decoupe": db_materiaux[0], "meuleuse_u_ebavurage": False, "meuleuse_mat_ebavurage": db_materiaux[0], "meuleuse_u_flap": False, "meuleuse_u_blanchiment": False, "meuleuse_disque_blanchiment": db_disques_blanchiment[0],
 
     # PERMIS SPÉCIFIQUES DÉCLENCHEURS (ÉTAPE 5)
     "p_hauteur": False, "p_toiture": False, "p_points_chauds": False, "p_excavation": False,
@@ -153,7 +167,7 @@ VALEURS_PAR_DEFAUT = {
     "act_demolition": False,
     "dta_consultation": False,
 
-    # EPIs DE BASE SITE P&G
+    # EPIs DE BASE SITE P&G (TOUS CONSERVÉS)
     "epi_lunettes_securite": True,
     "epi_chaussures_s3": True,
     "epi_casque_chantiers": True,
@@ -281,10 +295,16 @@ def generer_pdf_bytes(permis):
     pdf.text(15, 27, sanitize_text(f"Ref: {permis['id']} | Date: {permis['date_travaux']} | Heure: {permis['heure']}"))
     pdf.set_y(38)
 
-    pdf.set_fill_color(220, 252, 231); pdf.set_draw_color(34, 197, 94); pdf.set_text_color(22, 101, 52)
+    if permis.get('statut') == 'VALIDÉ':
+        pdf.set_fill_color(220, 252, 231); pdf.set_draw_color(34, 197, 94); pdf.set_text_color(22, 101, 52)
+        status_str = "PERMIS VALIDE & AUDITABLE SUR COMPTE ePDP"
+    else:
+        pdf.set_fill_color(254, 240, 138); pdf.set_draw_color(234, 179, 8); pdf.set_text_color(133, 77, 14)
+        status_str = "PERMIS EN ATTENTE DE VALIDATION BATCH (07h30)"
+
     pdf.rect(10, 38, 190, 10, 'DF')
     pdf.set_font("Helvetica", "B", 11)
-    pdf.text(15, 44.5, sanitize_text("PERMIS VALIDE & AUDITABLE SUR COMPTE ePDP"))
+    pdf.text(15, 44.5, sanitize_text(status_str))
     pdf.set_text_color(0, 0, 0); pdf.set_y(54)
 
     pdf.set_font("Helvetica", "B", 11)
@@ -343,6 +363,19 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             st.markdown("<div class='welcome-card'><h2 style='color:#003366;'>📝 Émargement PDP</h2><p>Émarger un Plan de Prévention.</p></div>", unsafe_allow_html=True)
             if st.button("📝 SIGNER UN PLAN DE PRÉVENTION (PDP)", use_container_width=True):
                 st.session_state.kiosk_mode = "PDP"; st.rerun()
+
+    # NOUVEAUTÉ : ÉMARGEMENT PDP DIRECT DEPUIS LA BORNE
+    elif st.session_state.kiosk_mode == "PDP":
+        if st.button("⬅️ Retour à l'accueil"): st.session_state.kiosk_mode = "HOME"; st.rerun()
+        st.subheader("📝 Émargement d'un Plan de Prévention (PDP)")
+        st.divider()
+        soc_pdp = st.selectbox("1. Sélectionnez votre Entreprise Extérieure (EE) :", db_societes)
+        pdp_sel = st.selectbox(f"2. Plans de Prévention enregistrés pour {soc_pdp} :", db_pdps.get(soc_pdp, ["Aucun PDP"]))
+        nom_pdp = st.text_input("Nom & Prénom de l'intervenant :")
+        statut_pdp = st.selectbox("Statut sur le chantier :", ["N1 (Compagnon)", "N2 (Responsable)"])
+        st.info(" [ Zone de Signature Tactile / Empreinte Stylet ] ")
+        if st.button("✅ VALIDER L'ÉMARGEMENT DU PDP", type="primary", use_container_width=True):
+            st.balloons(); st.success(f"Émargement validé pour {nom_pdp} !"); st.session_state.kiosk_mode = "HOME"
 
     elif st.session_state.kiosk_mode == "PERMIS":
         current_step = st.session_state.step
@@ -407,9 +440,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             with c_next:
                 if st.button("Suivant ➔", type="primary"): st.session_state.step = 4; st.rerun()
 
-        # ==============================================================================
-        # ÉTAPE 4 : LOCALISATION & ENCART SÉCURITÉ URGENCE
-        # ==============================================================================
         elif current_step == 4:
             st.subheader("4. Localisation & NUMÉROS DE TÉLÉPHONE D'URGENCE DU SITE")
             
@@ -428,7 +458,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             st.session_state.form_data["description"] = st.text_input("Description détaillée de la tâche :", value=get_val("description"))
 
             carto = db_zones_carto.get(get_val("lieu_pdp"), {})
-            st.warning(f"📍 **Secours Secteur :** PR: `{carto.get('pr')}` | Confinement: `{carto.get('confinement')}`")
+            st.warning(f"📍 **Secours Secteur :** PR: `{carto.get('pr')}` | Confinement: `{carto.get('confinement')}` | Urgence Ligne: `{carto.get('urgence')}`")
 
             c_back, c_next = st.columns(2)
             with c_back:
@@ -437,12 +467,12 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 if st.button("Suivant ➔", type="primary"): st.session_state.step = 5; st.rerun()
 
         # ==============================================================================
-        # ÉTAPE 5 : TÂCHES COURANTES, PERMIS SPÉCIFIQUES, DÉMOLITION/DTA & EPIs DE BASE
+        # ÉTAPE 5 : CONSERVÉE 100% AVEC VOS TÂCHES & EPIS DE BASE + INTÉGRATION DE LA MEULEUSE
         # ==============================================================================
         elif current_step == 5:
             st.subheader("5. Tâches Courantes, Check-list, Permis Spécifiques & EPIs")
 
-            # 1. SECTION TÂCHES COURANTES
+            # 1. SECTION TÂCHES COURANTES COMPLÈTE
             st.write("##### 🛠️ Tâches courantes prévues pendant l'intervention :")
             ct1, ct2 = st.columns(2)
             with ct1:
@@ -452,6 +482,22 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             with ct2:
                 st.session_state.form_data["t_manutention_lourde"] = st.checkbox("Manutention manuelle de charges ou matériel", value=get_val("t_manutention_lourde"))
                 st.session_state.form_data["t_nettoyage_chantiers"] = st.checkbox("Nettoyage, rangement et rangement de zone de chantier", value=get_val("t_nettoyage_chantiers"))
+
+            # NOUVEAUTÉ : SOUS-SECTION TECHNIQUE MEULEUSE
+            if get_val("t_meulage_poncage") or get_val("t_outils_electro"):
+                with st.expander("⚙️ Détails et Caractéristiques de l'Outil Meuleuse / Tronçonneuse (Si applicable)", expanded=False):
+                    st.session_state.form_data["sta_meuleuse"] = st.checkbox("Activer la caractérisation détaillée de la meuleuse", value=get_val("sta_meuleuse"))
+                    if get_val("sta_meuleuse"):
+                        c_m1, c_m2 = st.columns(2)
+                        with c_m1:
+                            st.session_state.form_data["meuleuse_diametre"] = st.selectbox("Diamètre du disque :", ["125 mm", "230 mm"], index=0 if get_val("meuleuse_diametre") == "125 mm" else 1)
+                            st.session_state.form_data["meuleuse_marque"] = st.text_input("Marque et Modèle :", value=get_val("meuleuse_marque"))
+                        with c_m2:
+                            st.session_state.form_data["meuleuse_alim"] = st.selectbox("Alimentation :", ["Batterie 18V", "Filaire 230V", "Pneumatique"], index=0)
+                            st.session_state.form_data["meuleuse_ref"] = st.text_input("Référence / N° de série :", value=get_val("meuleuse_ref"))
+                        # Déclenchement automatique du permis Point Chaud si meuleuse active
+                        st.session_state.form_data["p_points_chauds"] = True
+                        st.info("🔥 **Conséquence :** L'utilisation de la meuleuse déclenche automatiquement l'ouverture du Permis Point Chaud.")
 
             st.divider()
 
@@ -485,7 +531,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
             st.divider()
 
-            # 4. SECTION EPIS DE BASE ET RAJOUTS
+            # 4. SECTION EPIS DE BASE SITE P&G COMPLÈTE
             st.write("##### 🥽 Équipements de Protection Individuelle (EPIs de Base P&G) :")
             cepi_b1, cepi_b2 = st.columns(2)
             with cepi_b1:
@@ -519,14 +565,12 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 if st.button("Suivant ➔", type="primary"): st.session_state.step = 6; st.rerun()
 
         # ==============================================================================
-        # ÉTAPE 6 : FORMULAIRES SPÉCIFIQUES
+        # ÉTAPE 6 : FORMULAIRES SPÉCIFIQUES (HRT)
         # ==============================================================================
         elif current_step == 6:
             st.subheader("6. Ouverture des Permis Spécifiques")
 
-            # ---------------------------------------------------------
-            # 1. PERMIS TRAVAIL EN HAUTEUR / ÉCHAFAUDAGE / NACELLE
-            # ---------------------------------------------------------
+            # 1. HAUTEUR
             if get_val("p_hauteur"):
                 st.error("🧗 **PERMIS TRAVAIL EN HAUTEUR / ÉCHAFAUDAGE / NACELLE**")
                 st.info("🥽 **EPI :** Casque avec jugulaire obligatoire")
@@ -572,9 +616,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.form_data["h_echaf_soc_util"] = st.text_input("Identification de la société utilisatrice :", value=get_val("h_echaf_soc_util"))
                 st.divider()
 
-            # ---------------------------------------------------------
-            # 2. PERMIS ACCÈS TOITURE
-            # ---------------------------------------------------------
+            # 2. TOITURE
             if get_val("p_toiture"):
                 st.error("🏢 **PERMIS ACCÈS TOITURE**")
                 st.info("🥽 **EPI = Casque avec jugulaire obligatoire**")
@@ -618,9 +660,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.form_data["toiture_valideur"] = st.text_input("Validation de l'accès toiture par une personne habilité à signer les accès toiture (Attribution dans le profil ePDP) :", value=get_val("toiture_valideur"))
                 st.divider()
 
-            # ---------------------------------------------------------
-            # 3. PERMIS POINT CHAUD
-            # ---------------------------------------------------------
+            # 3. POINT CHAUD
             if get_val("p_points_chauds"):
                 st.warning("🔥 **PERMIS POINT CHAUD**")
                 st.info("🥽 **EPI de base =** Ecran facial contre les projections chaudes (EN166B) ou cagoule si soudures + Vêtement ignifugés")
@@ -672,9 +712,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 st.session_state.form_data["chaud_commentaires"] = st.text_area("Commentaire obligatoire pour clôture :", value=get_val("chaud_commentaires"))
                 st.divider()
 
-            # ---------------------------------------------------------
-            # 4. PERMIS EXCAVATION / TRANCHÉE / BTP
-            # ---------------------------------------------------------
+            # 4. EXCAVATION
             if get_val("p_excavation"):
                 st.warning("🚜 **PERMIS EXCAVATION**")
                 
@@ -725,9 +763,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 st.session_state.form_data["excav_casque_rouge"] = st.text_input("• Le casque rouge (obligatoire pour commencer l'intervention) :", value=get_val("excav_casque_rouge"))
                 st.divider()
 
-            # ---------------------------------------------------------
-            # 5. PERMIS GRUTAGE
-            # ---------------------------------------------------------
+            # 5. GRUTAGE
             if get_val("p_grutage"):
                 st.info("🏗️ **PERMIS GRUTAGE**")
                 
@@ -807,9 +843,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 st.session_state.form_data["grut_casque_rouge_sign"] = st.text_input("3. Le casque rouge (obligatoire pour commencer l'intervention) :", value=get_val("grut_casque_rouge_sign"))
                 st.divider()
 
-            # ---------------------------------------------------------
-            # 6. PERMIS ESPACE CONFINÉ
-            # ---------------------------------------------------------
+            # 6. ESPACE CONFINÉ
             if get_val("p_confine"):
                 st.info("🦺 **PERMIS ESPACE CONFINÉ**")
                 st.error("🥽 **EPI = Masque auto-sauveteur (type M20)**")
@@ -908,9 +942,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 st.session_state.form_data["conf_do"] = st.text_input("• Donneur d'ordre :", value=get_val("conf_do"))
                 st.divider()
 
-            # ---------------------------------------------------------
-            # 7. PERMIS TRAVAUX ÉLECTRIQUES
-            # ---------------------------------------------------------
+            # 7. TRAVAIL ÉLECTRIQUE
             if get_val("p_electrique"):
                 st.error("⚡ **PERMIS TRAVAUX ÉLECTRIQUE**")
                 st.warning("🥽 **EPI (de base) =** Casque d'électricien, Gants isolants électriques (EN 60903) + Surgants en cuir de protection mécanique + Vêtements de travail 100 % coton ou ignifugés (interdiction du synthétique)")
@@ -934,9 +966,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.form_data["elec_valideur_ei"] = st.text_input("Validation E&I / PT E&I :", value=get_val("elec_valideur_ei"))
                 st.divider()
 
-            # ---------------------------------------------------------
-            # 8. PERMIS CONSIGNATION EN 3 PHASES
-            # ---------------------------------------------------------
+            # 8. CONSIGNATION LOTO (3 PHASES)
             if get_val("p_consignation"):
                 st.success("⚡ **PERMIS CONSIGNATION EN 3 PHASES**")
                 
@@ -997,9 +1027,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                     st.session_state.form_data["loto_eq_sanitise"] = st.checkbox("Equipement sanitisé", value=get_val("loto_eq_sanitise"))
                 st.divider()
 
-            # ---------------------------------------------------------
-            # 9. PERMIS SYSTÈME À RISQUES / ATEX / FLUIDES DANGEREUX
-            # ---------------------------------------------------------
+            # 9. SYSTÈME À RISQUES / ATEX / CHIMIQUE
             if get_val("p_systeme_risque"):
                 st.error("☣ **PERMIS SYSTÈME À RISQUE**")
                 st.info("Ouverture du permis consignation (renvoi au même truc au-dessus) effectuée.")
@@ -1074,14 +1102,13 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 if st.button("Suivant ➔", type="primary"): st.session_state.step = 7; st.rerun()
 
         # ==============================================================================
-        # ÉTAPE 7 : SYNTHÈSE, GESTION SOUS-TRAITANCE & SOUMISSION
+        # ÉTAPE 7 : SYNTHÈSE & SOUMISSION
         # ==============================================================================
         elif current_step == 7:
             st.subheader("7. Synthèse & Signatures")
 
             st.markdown("<div class='status-pending'>⚠️ PERMIS EN ATTENTE DE VALIDATION BATCH (07h30)</div>", unsafe_allow_html=True)
 
-            # Règle sous-traitance à la fin du permis
             if get_val("is_subcontractor"):
                 st.warning(f"🤝 **Gestion de la sous-traitance (connue grâce au PDP et MOP) :** L'entreprise sélectionnée étant en sous-traitance, à la fin du permis de travail, le N2 de la société principale (**{get_val('titulaire_n2')}**) doit également valider le permis de travail et le signer.")
 
@@ -1148,23 +1175,33 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 # ==============================================================================
 elif role == "📊 DDS Board & Batch 07h30 (DO / HSE)":
     st.markdown("<div class='pg-header' style='background: #0f172a;'><h2>DDS BOARD — VALIDATION BATCH DAILY</h2></div>", unsafe_allow_html=True)
-    if st.button("✅ VALIDER LE BATCH DE 07h30", type="primary"):
+    if st.button("✅ VALIDER LE BATCH DE 07h30 (AUTORISER TOUS LES PERMIS)", type="primary"):
         for p in st.session_state.permis_db: p["statut"] = "VALIDÉ"
-        st.success("Toutes les demandes de la fournée ont été validées !")
+        st.success("Fournée quotidienne validée ! Tous les permis soumis sont maintenant officiellement actifs.")
 
     for p in st.session_state.permis_db:
-        st.write(f"### {p['id']} - {p['societe']} ({p['statut']})")
-        st.table(p.get("tableau_risques", []))
+        with st.expander(f"Permis {p['id']} - {p['societe']} ({p['statut']})"):
+            st.write(f"**Zone :** {p['zone']} | **N2 :** {p['n2']}")
+            st.table(p.get("tableau_risques", []))
+            pdf_valid_bytes = generer_pdf_bytes(p)
+            st.download_button("📄 Télécharger PDF Officiel", data=pdf_valid_bytes, file_name=f"Permis_{p['id']}.pdf", mime="application/pdf", key=f"btn_{p['id']}")
 
 # ==============================================================================
 # INTERFACE 3 : INSPECTION TERRAIN (CASQUE ROUGE)
 # ==============================================================================
 else:
-    st.markdown("<div class='pg-header' style='background: #b91c1c;'><h2>INSPECTION TERRAIN — CASQUE ROUGE</h2></div>", unsafe_allow_html=True)
+    st.markdown("<div class='pg-header' style='background: #b91c1c;'><h2>AUDIT TERRAIN & SCAN QR CODE — CASQUE ROUGE</h2></div>", unsafe_allow_html=True)
     if st.session_state.permis_db:
-        pt_sel = st.selectbox("Sélectionner un permis :", [p["id"] for p in st.session_state.permis_db])
+        pt_sel = st.selectbox("Sélectionner un permis scanné sur zone :", [p["id"] for p in st.session_state.permis_db])
         p = next(p for p in st.session_state.permis_db if p["id"] == pt_sel)
-        st.write(f"### Contrôle Permis : {p['id']}")
+        
+        st.write(f"### Permis Ref : {p['id']} ({p['statut']})")
+        st.write(f"**Entreprise :** {p['societe']} | **PDP :** {p['pdp']}")
+        st.write(f"**Signataires :** {', '.join(p['intervenants'])}")
+        
         st.table(p.get("tableau_risques", []))
+        
+        if st.button("✍️ Valider la Ronde de Sécurité Point Chaud (60 min)"):
+            st.success("Ronde de sécurité validée et horodatée par le Casque Rouge.")
     else:
-        st.info("Aucun permis enregistré pour le moment.")
+        st.info("Aucun permis émis pour le moment. Veuillez créer un permis sur la borne Kiosk.")
