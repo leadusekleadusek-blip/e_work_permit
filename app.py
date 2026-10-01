@@ -10,7 +10,7 @@ from fpdf import FPDF
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="P&G Amiens — e-Work Permit System",
-    page_icon="🛡️",
+    page_icon="🛡️️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -82,14 +82,12 @@ st.markdown("""
 @st.cache_data(ttl=1800)
 def obtenir_meteo_amiens_live():
     try:
-        # Coordonnées GPS ajustées sur la Zone Industrielle Amiens Nord (49.9250, 2.2900)
         url = "https://api.open-meteo.com/v1/forecast?latitude=49.9250&longitude=2.2900&daily=temperature_2m_max,temperature_2m_min,windgusts_10m_max,weathercode&timezone=Europe%2FParis"
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req, timeout=3) as response:
             data = json.loads(response.read().decode())
             code = data['daily']['weathercode'][0]
             
-            # Détermination de l'icône
             if code in [0, 1]: icon = "☀️"
             elif code in [2, 3]: icon = "⛅"
             elif code in [45, 48]: icon = "🌫️"
@@ -193,7 +191,7 @@ VALEURS_PAR_DEFAUT = {
     # 2. STA (SAFETY TASK ASSIGNMENT - ÉTAPE 5)
     "sta_prod_chimiques": False,
     "sta_prod_chimiques_nom": "",
-    "t_outils_electro": True,
+    "t_outils_electro": False,
     "t_meulage_poncage": False,
     "t_travaux_manuels": True,
     "t_manutention_lourde": False,
@@ -405,7 +403,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
             c_back, c_next = st.columns(2)
             with c_back:
-                if st.button("⬅️️ Précédent"): st.session_state.step = 1; st.rerun()
+                if st.button("⬅️ Précédent"): st.session_state.step = 1; st.rerun()
             with c_next:
                 if st.button("Suivant ➔", type="primary"): st.session_state.step = 3; st.rerun()
 
@@ -457,7 +455,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             temp_max = meteo_live['temp_max_j0']
             vent = meteo_live['vent_j0']
             
-            # Évaluation de la couleur et des conditions météo
             if vent > 36 or temp_max < 3 or temp_max > 30:
                 weather_class = "weather-alert"
                 status_msg = "❌ <b>CONDITIONS DÉFAVORABLES / ALERTE MÉTÉO</b> (Vent > 36 km/h ou T° extrême) — Travaux spécifiques soumis à restriction/dérogation Casque Rouge."
@@ -487,39 +484,52 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             """, unsafe_allow_html=True)
 
             # ------------------------------------------------------------------
-            # 1. LISTE DES RISQUES PRINCIPAUX (EN PREMIER)
+            # 1. LISTE DES RISQUES PRINCIPAUX
             # ------------------------------------------------------------------
             st.error("🚨 **1. LISTE DES RISQUES PRINCIPAUX (Déclenchant un Permis Spécifique HRT à l'Étape 6) :**")
             
             cr1, cr2 = st.columns(2)
             with cr1:
-                st.session_state.form_data["p_hauteur"] = st.checkbox("Travail en hauteur", value=get_val("p_hauteur"))
-                st.session_state.form_data["p_toiture"] = st.checkbox("Accès toiture", value=get_val("p_toiture"))
-                st.session_state.form_data["p_points_chauds"] = st.checkbox("Génération de points chauds", value=get_val("p_points_chauds"))
-                st.session_state.form_data["p_excavation"] = st.checkbox("Tranchée, BTP, ouverture de sol", value=get_val("p_excavation"))
-                st.session_state.form_data["p_grutage"] = st.checkbox("Grutage", value=get_val("p_grutage"))
-                st.session_state.form_data["p_confine"] = st.checkbox("Espace confiné, risque asphyxie, anoxie (Azote)", value=get_val("p_confine"))
+                p_hauteur = st.checkbox("Travail en hauteur", value=get_val("p_hauteur"))
+                p_toiture = st.checkbox("Accès toiture", value=get_val("p_toiture"))
+                p_points_chauds = st.checkbox("Génération de points chauds", value=get_val("p_points_chauds"))
+                p_excavation = st.checkbox("Tranchée, BTP, ouverture de sol", value=get_val("p_excavation"))
+                p_grutage = st.checkbox("Grutage", value=get_val("p_grutage"))
+                p_confine = st.checkbox("Espace confiné, risque asphyxie, anoxie (Azote)", value=get_val("p_confine"))
 
             with cr2:
-                st.session_state.form_data["p_electrique"] = st.checkbox("Travail électrique", value=get_val("p_electrique"))
-                st.session_state.form_data["p_ouverture_circuit"] = st.checkbox("Ouverture de circuit sous pression (vapeur, air, gaz, fluides chimiques)", value=get_val("p_ouverture_circuit"))
-                st.session_state.form_data["p_machines_mouvement"] = st.checkbox("Machines en mouvement, parties mobiles, risque mécaniques", value=get_val("p_machines_mouvement"))
-                st.session_state.form_data["p_equipement_pression"] = st.checkbox("Équipement sous pression", value=get_val("p_equipement_pression"))
-                st.session_state.form_data["p_laser_classe_iv"] = st.checkbox("Travaux à proximité de Lasers Classe IV", value=get_val("p_laser_classe_iv"))
-                st.session_state.form_data["p_demolition"] = st.checkbox("Démolition", value=get_val("p_demolition"))
-                st.session_state.form_data["p_meuleuse"] = st.checkbox("Utilisation de la meuleuse", value=get_val("p_meuleuse"))
+                p_electrique = st.checkbox("Travail électrique", value=get_val("p_electrique"))
+                p_ouverture_circuit = st.checkbox("Ouverture de circuit sous pression (vapeur, air, gaz, fluides chimiques)", value=get_val("p_ouverture_circuit"))
+                p_machines_mouvement = st.checkbox("Machines en mouvement, parties mobiles, risque mécaniques", value=get_val("p_machines_mouvement"))
+                p_equipement_pression = st.checkbox("Équipement sous pression", value=get_val("p_equipement_pression"))
+                p_laser_classe_iv = st.checkbox("Travaux à proximité de Lasers Classe IV", value=get_val("p_laser_classe_iv"))
+                p_demolition = st.checkbox("Démolition", value=get_val("p_demolition"))
+                p_meuleuse = st.checkbox("Utilisation de la meuleuse", value=get_val("p_meuleuse"))
 
-            # Répercussions dynamiques des clics
-            if get_val("p_meuleuse"):
-                st.session_state.form_data["p_points_chauds"] = True
+            # RÈGLE D'ASSOCIATION UNIDIRECTIONNELLE MEULEUSE -> POINT CHAUD + OUTILS ÉLECTRO
+            if p_meuleuse:
+                p_points_chauds = True
                 st.session_state.form_data["t_outils_electro"] = True
-                st.info("🔥⚙️ **Répercussion :** L'utilisation de la meuleuse coche automatiquement 'Utilisation d'outils électroportatifs' dans la STA, ainsi que le 'Permis Point Chaud' et la 'Fiche Meuleuse' à l'Étape 6.")
 
-            if get_val("p_ouverture_circuit") or get_val("p_machines_mouvement") or get_val("p_equipement_pression") or get_val("p_laser_classe_iv"):
+            # Sauvegarde des risques principaux dans la session
+            st.session_state.form_data["p_hauteur"] = p_hauteur
+            st.session_state.form_data["p_toiture"] = p_toiture
+            st.session_state.form_data["p_points_chauds"] = p_points_chauds
+            st.session_state.form_data["p_excavation"] = p_excavation
+            st.session_state.form_data["p_grutage"] = p_grutage
+            st.session_state.form_data["p_confine"] = p_confine
+            st.session_state.form_data["p_electrique"] = p_electrique
+            st.session_state.form_data["p_ouverture_circuit"] = p_ouverture_circuit
+            st.session_state.form_data["p_machines_mouvement"] = p_machines_mouvement
+            st.session_state.form_data["p_equipement_pression"] = p_equipement_pression
+            st.session_state.form_data["p_laser_classe_iv"] = p_laser_classe_iv
+            st.session_state.form_data["p_demolition"] = p_demolition
+            st.session_state.form_data["p_meuleuse"] = p_meuleuse
+
+            if p_ouverture_circuit or p_machines_mouvement or p_equipement_pression or p_laser_classe_iv:
                 st.session_state.form_data["p_consignation"] = True
 
-            if get_val("p_demolition"):
-                st.warning("🧱 **Condition Activée (Démolition) :**")
+            if p_demolition:
                 st.session_state.form_data["dta_consultation"] = st.checkbox("Consultation DTA (Dossier Technique Amiante) effectuée et validée", value=get_val("dta_consultation"))
 
             st.divider()
@@ -529,14 +539,11 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             # ------------------------------------------------------------------
             st.write("##### 🛠️ 2. STA (Safety Task Assignment) & Outillage de Chantier :")
 
-            # Produits Chimiques
             st.session_state.form_data["sta_prod_chimiques"] = st.checkbox("Produits chimiques (si coché : indiquez les détails)", value=get_val("sta_prod_chimiques"))
             if get_val("sta_prod_chimiques"):
                 st.session_state.form_data["sta_prod_chimiques_nom"] = st.text_input("Nom(s) du/des produit(s) chimique(s) utilisé(s) :", value=get_val("sta_prod_chimiques_nom"), placeholder="ex: Solvant, Acide Chlorhydrique, Soude...")
                 st.session_state.form_data["p_systeme_risque"] = True
-                st.info("☣ **Répercussion :** L'utilisation de produits chimiques ouvre le Permis Systèmes à Risques à l'Étape 6.")
 
-            # Tâches / Outils STA
             ct1, ct2 = st.columns(2)
             with ct1:
                 st.session_state.form_data["t_outils_electro"] = st.checkbox("Utilisation d'outils électroportatifs", value=get_val("t_outils_electro"))
@@ -549,7 +556,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             st.divider()
 
             # ------------------------------------------------------------------
-            # 3. LISTE EXHAUSTIVE DES EPIS (AVEC LES NORMES EXACTES)
+            # 3. LISTE DES EPIS AVEC COCHAGE AUTOMATIQUE SELON RISQUES
             # ------------------------------------------------------------------
             st.write("##### 🥽 3. Équipements de Protection Individuelle (EPIs) :")
 
@@ -559,17 +566,24 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             </div>
             """, unsafe_allow_html=True)
 
+            # ÉVALUATION AUTOMATIQUE DES EPIS REQUIS D'APRÈS LES RISQUES COCHÉS
+            auto_jugulaire = p_hauteur or p_toiture
+            auto_visiere = p_points_chauds or p_meuleuse or p_laser_classe_iv
+            auto_gants_elec = p_electrique
+            auto_gants_coupure = p_meuleuse or p_points_chauds or get_val("t_meulage_poncage")
+            auto_resp_cartouche = p_confine or get_val("sta_prod_chimiques")
+
             cepi_col1, cepi_col2 = st.columns(2)
 
             with cepi_col1:
                 st.write("**• Lunettes & Protections Faciales :**")
-                st.session_state.form_data["epi_lunettes_chantier_en166"] = st.checkbox("Lunettes Chantier ou Visière — EN 166 (Obligatoire)", value=get_val("epi_lunettes_chantier_en166"))
+                st.session_state.form_data["epi_lunettes_chantier_en166"] = st.checkbox("Lunettes Chantier ou Visière — EN 166 (Obligatoire)", value=get_val("epi_lunettes_chantier_en166", True))
                 st.session_state.form_data["epi_lunettes_etanches"] = st.checkbox("Lunettes étanches", value=get_val("epi_lunettes_etanches"))
-                st.session_state.form_data["epi_visiere_idra_en166b"] = st.checkbox("Protection faciale : Visière (casque type IDRA) — EN 166B", value=get_val("epi_visiere_idra_en166b"))
+                st.session_state.form_data["epi_visiere_idra_en166b"] = st.checkbox("Protection faciale : Visière (casque type IDRA) — EN 166B", value=auto_visiere or get_val("epi_visiere_idra_en166b"))
                 st.session_state.form_data["epi_lunettes_pare_visage"] = st.checkbox("Lunette + pare visage", value=get_val("epi_lunettes_pare_visage"))
 
                 st.write("**• Casques :**")
-                st.session_state.form_data["epi_casque_jugulaire"] = st.checkbox("Casque avec jugulaire (Obligatoire)", value=get_val("epi_casque_jugulaire"))
+                st.session_state.form_data["epi_casque_jugulaire"] = st.checkbox("Casque avec jugulaire (Obligatoire)", value=auto_jugulaire or get_val("epi_casque_jugulaire", True))
                 st.session_state.form_data["epi_casque_protection_auditive_en387"] = st.checkbox("Casque avec protection auditive — EN 387/A1", value=get_val("epi_casque_protection_auditive_en387"))
 
                 st.write("**• Protections Auditives :**")
@@ -577,16 +591,16 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
             with cepi_col2:
                 st.write("**• Gants de Protection :**")
-                st.session_state.form_data["epi_gants_anticoupure_4x43d"] = st.checkbox("Gants Anti-coupures — 4543 / 4x43D", value=get_val("epi_gants_anticoupure_4x43d"))
+                st.session_state.form_data["epi_gants_anticoupure_4x43d"] = st.checkbox("Gants Anti-coupures — 4543 / 4x43D", value=auto_gants_coupure or get_val("epi_gants_anticoupure_4x43d", True))
                 st.session_state.form_data["epi_gants_manutention_cuir"] = st.checkbox("Gants Manutention — Cuir bovin ou chèvre", value=get_val("epi_gants_manutention_cuir"))
-                st.session_state.form_data["epi_gants_chimiques_en374"] = st.checkbox("Gants Chimiques — EN 374-1/2", value=get_val("epi_gants_chimiques_en374"))
-                st.session_state.form_data["epi_gants_elec_en60903"] = st.checkbox("Gants Électrique isolants / surgants — EN 60903", value=get_val("epi_gants_elec_en60903"))
+                st.session_state.form_data["epi_gants_chimiques_en374"] = st.checkbox("Gants Chimiques — EN 374-1/2", value=get_val("sta_prod_chimiques") or get_val("epi_gants_chimiques_en374"))
+                st.session_state.form_data["epi_gants_elec_en60903"] = st.checkbox("Gants Électrique isolants / surgants — EN 60903", value=auto_gants_elec or get_val("epi_gants_elec_en60903"))
 
                 st.write("**• Protections Respiratoires :**")
                 st.session_state.form_data["epi_resp_ffp1_ffp2"] = st.checkbox("Masque FFP1 / FFP2", value=get_val("epi_resp_ffp1_ffp2"))
                 st.session_state.form_data["epi_resp_3m6000"] = st.checkbox("Masque demi-facial 3M6000", value=get_val("epi_resp_3m6000"))
                 st.session_state.form_data["epi_resp_versaflo"] = st.checkbox("Système à adduction / ventilation assistée Versaflo", value=get_val("epi_resp_versaflo"))
-                st.session_state.form_data["epi_resp_cartouche_abek_en14387"] = st.checkbox("Cartouche ABEK — EN 14387", value=get_val("epi_resp_cartouche_abek_en14387"))
+                st.session_state.form_data["epi_resp_cartouche_abek_en14387"] = st.checkbox("Cartouche ABEK — EN 14387", value=auto_resp_cartouche or get_val("epi_resp_cartouche_abek_en14387"))
 
             st.write("**• Autre :**")
             st.session_state.form_data["epi_autre_texte"] = st.text_input("Autre protection spécifique (à préciser) :", value=get_val("epi_autre_texte"), placeholder="ex: Tablier de protection, harnais de maintien...")
@@ -1170,7 +1184,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
         elif current_step == 7:
             st.subheader("7. Synthèse & Signatures")
 
-            st.markdown("<div class='status-pending'>⚠️ PERMIS EN ATTENTE DE VALIDATION BATCH (07h30)</div>", unsafe_allow_html=True)
+            st.markdown("<div class='status-pending'>⚠️️ PERMIS EN ATTENTE DE VALIDATION BATCH (07h30)</div>", unsafe_allow_html=True)
 
             if get_val("is_subcontractor"):
                 st.warning(f"🤝 **Gestion de la sous-traitance (connue grâce au PDP et MOP) :** L'entreprise sélectionnée étant en sous-traitance, à la fin du permis de travail, le N2 de la société principale (**{get_val('titulaire_n2')}**) doit également valider le permis de travail et le signer.")
@@ -1225,7 +1239,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
             c_back, c_sub, c_pdf = st.columns([1, 2, 2])
             with c_back:
-                if st.button("⬅️ Précédent"): st.session_state.step = 6; st.rerun()
+                if st.button("⬅️️ Précédent"): st.session_state.step = 6; st.rerun()
 
             with c_pdf:
                 st.download_button("📄 TÉLÉCHARGER PERMIS PDF", data=pdf_bytes, file_name=f"Permis_{permis_final['id']}.pdf", mime="application/pdf", use_container_width=True)
