@@ -10,7 +10,7 @@ from fpdf import FPDF
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="P&G Amiens — e-Work Permit System",
-    page_icon="🛡️️",
+    page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -192,7 +192,6 @@ VALEURS_PAR_DEFAUT = {
     "sta_prod_chimiques": False,
     "sta_prod_chimiques_nom": "",
     "t_outils_electro": False,
-    "t_meulage_poncage": False,
     "t_travaux_manuels": True,
     "t_manutention_lourde": False,
     "t_nettoyage_chantiers": True,
@@ -492,7 +491,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             with cr1:
                 p_hauteur = st.checkbox("Travail en hauteur", value=get_val("p_hauteur"))
                 p_toiture = st.checkbox("Accès toiture", value=get_val("p_toiture"))
-                p_points_chauds = st.checkbox("Génération de points chauds", value=get_val("p_points_chauds"))
+                p_points_chauds_val = get_val("p_points_chauds")
                 p_excavation = st.checkbox("Tranchée, BTP, ouverture de sol", value=get_val("p_excavation"))
                 p_grutage = st.checkbox("Grutage", value=get_val("p_grutage"))
                 p_confine = st.checkbox("Espace confiné, risque asphyxie, anoxie (Azote)", value=get_val("p_confine"))
@@ -506,10 +505,13 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 p_demolition = st.checkbox("Démolition", value=get_val("p_demolition"))
                 p_meuleuse = st.checkbox("Utilisation de la meuleuse", value=get_val("p_meuleuse"))
 
-            # RÈGLE D'ASSOCIATION UNIDIRECTIONNELLE MEULEUSE -> POINT CHAUD + OUTILS ÉLECTRO
+            # RÈGLE D'ASSOCIATION UNIDIRECTIONNELLE MEULEUSE -> POINTS CHAUDS + OUTILS ÉLECTRO
             if p_meuleuse:
-                p_points_chauds = True
+                p_points_chauds_val = True
                 st.session_state.form_data["t_outils_electro"] = True
+
+            with cr1:
+                p_points_chauds = st.checkbox("Génération de points chauds", value=p_points_chauds_val)
 
             # Sauvegarde des risques principaux dans la session
             st.session_state.form_data["p_hauteur"] = p_hauteur
@@ -535,7 +537,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             st.divider()
 
             # ------------------------------------------------------------------
-            # 2. STA (SAFETY TASK ASSIGNMENT)
+            # 2. STA (SAFETY TASK ASSIGNMENT) — SANS MEULAGE MANUEL
             # ------------------------------------------------------------------
             st.write("##### 🛠️ 2. STA (Safety Task Assignment) & Outillage de Chantier :")
 
@@ -547,7 +549,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             ct1, ct2 = st.columns(2)
             with ct1:
                 st.session_state.form_data["t_outils_electro"] = st.checkbox("Utilisation d'outils électroportatifs", value=get_val("t_outils_electro"))
-                st.session_state.form_data["t_meulage_poncage"] = st.checkbox("Meulage / Ponçage / Tronçonnage manuel", value=get_val("t_meulage_poncage"))
                 st.session_state.form_data["t_travaux_manuels"] = st.checkbox("Travaux manuels généraux et d'outillage à main", value=get_val("t_travaux_manuels"))
             with ct2:
                 st.session_state.form_data["t_manutention_lourde"] = st.checkbox("Manutention manuelle de charges ou matériel", value=get_val("t_manutention_lourde"))
@@ -570,7 +571,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             auto_jugulaire = p_hauteur or p_toiture
             auto_visiere = p_points_chauds or p_meuleuse or p_laser_classe_iv
             auto_gants_elec = p_electrique
-            auto_gants_coupure = p_meuleuse or p_points_chauds or get_val("t_meulage_poncage")
+            auto_gants_coupure = p_meuleuse or p_points_chauds
             auto_resp_cartouche = p_confine or get_val("sta_prod_chimiques")
 
             cepi_col1, cepi_col2 = st.columns(2)
@@ -1184,7 +1185,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
         elif current_step == 7:
             st.subheader("7. Synthèse & Signatures")
 
-            st.markdown("<div class='status-pending'>⚠️️ PERMIS EN ATTENTE DE VALIDATION BATCH (07h30)</div>", unsafe_allow_html=True)
+            st.markdown("<div class='status-pending'>⚠️ PERMIS EN ATTENTE DE VALIDATION BATCH (07h30)</div>", unsafe_allow_html=True)
 
             if get_val("is_subcontractor"):
                 st.warning(f"🤝 **Gestion de la sous-traitance (connue grâce au PDP et MOP) :** L'entreprise sélectionnée étant en sous-traitance, à la fin du permis de travail, le N2 de la société principale (**{get_val('titulaire_n2')}**) doit également valider le permis de travail et le signer.")
@@ -1239,7 +1240,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
             c_back, c_sub, c_pdf = st.columns([1, 2, 2])
             with c_back:
-                if st.button("⬅️️ Précédent"): st.session_state.step = 6; st.rerun()
+                if st.button("⬅️ Précédent"): st.session_state.step = 6; st.rerun()
 
             with c_pdf:
                 st.download_button("📄 TÉLÉCHARGER PERMIS PDF", data=pdf_bytes, file_name=f"Permis_{permis_final['id']}.pdf", mime="application/pdf", use_container_width=True)
