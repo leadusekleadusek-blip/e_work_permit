@@ -204,12 +204,12 @@ VALEURS_PAR_DEFAUT = {
     "t_manutention_lourde": False,
     "t_nettoyage_chantiers": True,
 
-    # SPÉCIFICITÉS MEULEUSE (POUR ÉTAPE 6 PERMIS SPÉCIFIQUE)
+    # SPÉCIFICITÉS MEULEUSE
     "meuleuse_diametre": "125 mm", "meuleuse_operateurs": ["Léa DUSEK"], "meuleuse_marque": "Bosch Pro", "meuleuse_alim": "Batterie 18V", "meuleuse_ref": "MEU-042", "meuleuse_vitesse": "11000",
     "meu_env_plain_pied": True, "meu_env_hauteur": False, "meu_env_confine": False, "meu_env_excavation": False, "meu_env_stable": True, "meu_env_maintien_2mains": True, "meu_env_piece_fixee": True, "meu_env_hors_ligne_tir": True, "meu_position_op": "Debout",
     "meuleuse_u_decoupe": False, "meuleuse_mat_decoupe": db_materiaux[0], "meuleuse_u_ebavurage": False, "meuleuse_mat_ebavurage": db_materiaux[0], "meuleuse_u_flap": False, "meuleuse_u_blanchiment": False, "meuleuse_disque_blanchiment": db_disques_blanchiment[0],
 
-    # 3. LISTE EXHAUSTIVE DES EPIS (AVEC NORMES EXACTES)
+    # 3. EPIS
     "epi_lunettes_chantier_en166": True,
     "epi_lunettes_etanches": False,
     "epi_visiere_idra_en166b": False,
@@ -227,7 +227,7 @@ VALEURS_PAR_DEFAUT = {
     "epi_resp_cartouche_abek_en14387": False,
     "epi_autre_texte": "",
 
-    # FORMULAIRES HRT (ÉTAPES 6)
+    # FORMULAIRES HRT
     "h_pirl": False, "h_pirl_vgp": True, "h_pirl_soc": "ABYLSEN",
     "h_nacelle": False, "h_nacelle_vgp": True, "h_nacelle_checklist": True, "h_nacelle_caces": True, "h_nacelle_aut": True, "h_nacelle_harnais": True, "h_nacelle_soc": "ABYLSEN",
     "h_echaf": False, "h_echaf_montage": False, "h_echaf_montage_qualif": True, "h_echaf_montage_harnais": True, "h_echaf_util": False, "h_echaf_util_qualif": True, "h_echaf_ctrl_regle": True, "h_echaf_certif_affiche": True, "h_echaf_verif_j": True, "h_echaf_soc_util": "ABYLSEN",
@@ -264,13 +264,18 @@ def generer_pdf_bytes(permis):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.set_fill_color(0, 51, 102); pdf.rect(10, 10, 190, 22, 'F')
-    pdf.set_text_color(255, 255, 255); pdf.set_font("Helvetica", "B", 14)
+    
+    # En-tête
+    pdf.set_fill_color(0, 51, 102)
+    pdf.rect(10, 10, 190, 22, 'F')
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Helvetica", "B", 14)
     pdf.text(15, 20, sanitize_text("PROCTER & GAMBLE AMIENS - e-Work Permit System"))
     pdf.set_font("Helvetica", "", 10)
     pdf.text(15, 27, sanitize_text(f"Ref: {permis['id']} | Date: {permis['date_travaux']} | Heure: {permis['heure']}"))
     pdf.set_y(38)
 
+    # Bannière de statut
     if permis.get('statut') == 'VALIDÉ':
         pdf.set_fill_color(220, 252, 231); pdf.set_draw_color(34, 197, 94); pdf.set_text_color(22, 101, 52)
         status_str = "PERMIS VALIDE & AUDITABLE SUR COMPTE ePDP"
@@ -281,36 +286,139 @@ def generer_pdf_bytes(permis):
     pdf.rect(10, 38, 190, 10, 'DF')
     pdf.set_font("Helvetica", "B", 11)
     pdf.text(15, 44.5, sanitize_text(status_str))
-    pdf.set_text_color(0, 0, 0); pdf.set_y(54)
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_y(52)
 
+    # Section 1 : Infos Générales & Localisation
     pdf.set_font("Helvetica", "B", 11)
-    pdf.cell(0, 6, sanitize_text("1. INFORMATIONS GENERALES & SOUS-TRAITANCE"), 0, 1)
+    pdf.set_fill_color(241, 245, 249)
+    pdf.cell(190, 6, sanitize_text("1. INFORMATIONS GÉNÉRALES & LOCALISATION"), 1, 1, 'L', True)
     pdf.set_font("Helvetica", "", 9)
-    pdf.cell(0, 5, sanitize_text(f"Societe: {permis['societe']} | PDP: {permis['pdp']} | MoP: {permis['mop']}"), 0, 1)
+    pdf.cell(95, 5, sanitize_text(f"Société : {permis['societe']}"), 0, 0)
+    pdf.cell(95, 5, sanitize_text(f"Responsable N2 : {permis['n2']}"), 0, 1)
+    pdf.cell(190, 5, sanitize_text(f"PDP : {permis['pdp']}"), 0, 1)
+    pdf.cell(190, 5, sanitize_text(f"MoP : {permis['mop']}"), 0, 1)
     if permis.get("is_subcontractor"):
-        pdf.cell(0, 5, sanitize_text(f"[SOUS-TRAITANCE DETECTEE] N2 Titulaire Valideur: {permis.get('titulaire_n2')}"), 0, 1)
-    pdf.cell(0, 5, sanitize_text(f"Responsable N2: {permis['n2']} | Lieu: {permis['zone']} ({permis.get('emplacement', '')})"), 0, 1)
+        pdf.cell(190, 5, sanitize_text(f"[SOUS-TRAITANCE] N2 Titulaire Valideur : {permis.get('titulaire_n2')}"), 0, 1)
+    pdf.cell(190, 5, sanitize_text(f"Zone : {permis['zone']} ({permis.get('emplacement', '')})"), 0, 1)
+    pdf.cell(190, 5, sanitize_text(f"Description : {permis.get('description', '')}"), 0, 1)
+    
+    # Secours secteur
+    carto = db_zones_carto.get(permis['zone'], {})
+    pdf.cell(190, 5, sanitize_text(f"Points Secours : PR: {carto.get('pr', 'N/A')} | Confinement: {carto.get('confinement', 'N/A')}"), 0, 1)
     pdf.ln(3)
 
+    # Section 2 : Tableau Synthétique des Risques
     pdf.set_font("Helvetica", "B", 11)
-    pdf.cell(0, 6, sanitize_text("2. SYNTHESE COMPLÈTE DES RISQUES ET PERMIS SPECIFIQUES"), 0, 1)
-    pdf.set_font("Helvetica", "B", 8); pdf.set_fill_color(241, 245, 249)
-    pdf.cell(60, 6, sanitize_text("Activite Cochee"), 1, 0, 'L', True)
-    pdf.cell(65, 6, sanitize_text("Risque Identifie"), 1, 0, 'L', True)
-    pdf.cell(65, 6, sanitize_text("Moyens de Prevention / EPIs / Signatures"), 1, 1, 'L', True)
+    pdf.cell(190, 6, sanitize_text("2. SYNTHÈSE DES RISQUES & PERMIS SPÉCIFIQUES"), 1, 1, 'L', True)
+    pdf.set_font("Helvetica", "B", 8)
+    pdf.cell(55, 6, sanitize_text("Activité Cochée"), 1, 0, 'L', True)
+    pdf.cell(55, 6, sanitize_text("Risque Identifié"), 1, 0, 'L', True)
+    pdf.cell(80, 6, sanitize_text("Mesures de Prévention Principales"), 1, 1, 'L', True)
 
     pdf.set_font("Helvetica", "", 8)
     for r in permis.get("tableau_risques", []):
-        pdf.cell(60, 6, sanitize_text(str(r.get("activite", "")))[:32], 1, 0)
-        pdf.cell(65, 6, sanitize_text(str(r.get("risque", "")))[:36], 1, 0)
-        pdf.cell(65, 6, sanitize_text(str(r.get("prevention", "")))[:36], 1, 1)
-
+        pdf.cell(55, 6, sanitize_text(str(r.get("activite", "")))[:30], 1, 0)
+        pdf.cell(55, 6, sanitize_text(str(r.get("risque", "")))[:30], 1, 0)
+        pdf.cell(80, 6, sanitize_text(str(r.get("prevention", "")))[:48], 1, 1)
     pdf.ln(3)
+
+    # Section 3 : Détails des Permis Spécifiques
+    details_hrt = permis.get("details_hrt", {})
+    if details_hrt:
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.cell(190, 6, sanitize_text("3. DÉTAILS COMPLETS DES PERMIS SPÉCIFIQUES (HRT)"), 1, 1, 'L', True)
+        pdf.set_font("Helvetica", "", 8)
+
+        if "meuleuse" in details_hrt:
+            m = details_hrt["meuleuse"]
+            pdf.set_font("Helvetica", "B", 9)
+            pdf.cell(190, 5, sanitize_text("• Specificités Meuleuse :"), 0, 1)
+            pdf.set_font("Helvetica", "", 8)
+            pdf.cell(190, 4, sanitize_text(f"  Diamètre: {m['diametre']} | Marque: {m['marque']} | Alim: {m['alim']} | Réf: {m['ref']}"), 0, 1)
+            pdf.cell(190, 4, sanitize_text(f"  Opérations: {', '.join(m['operations'])}"), 0, 1)
+
+        if "toiture" in details_hrt:
+            t = details_hrt["toiture"]
+            pdf.set_font("Helvetica", "B", 9)
+            pdf.cell(190, 5, sanitize_text("• Accès Toiture :"), 0, 1)
+            pdf.set_font("Helvetica", "", 8)
+            pdf.cell(190, 4, sanitize_text(f"  Protection: {t['protection']} | Valideur ePDP: {t['valideur']}"), 0, 1)
+
+        if "points_chauds" in details_hrt:
+            ch = details_hrt["points_chauds"]
+            pdf.set_font("Helvetica", "B", 9)
+            pdf.cell(190, 5, sanitize_text("• Permis Point Chaud :"), 0, 1)
+            pdf.set_font("Helvetica", "", 8)
+            pdf.cell(190, 4, sanitize_text(f"  Extincteurs: {ch['extincteur1']} & {ch['extincteur2']} | Dégagé 10m: {ch['degage_10m']}"), 0, 1)
+            pdf.cell(190, 4, sanitize_text(f"  Vigie: {ch['vigie']} | Surveillance 60 min: {ch['surveillance_60m']}"), 0, 1)
+            pdf.cell(190, 4, sanitize_text(f"  Fin travaux: {ch['heure_fin']} | Heure départ: {ch['heure_depart']}"), 0, 1)
+
+        if "excavation" in details_hrt:
+            ex = details_hrt["excavation"]
+            pdf.set_font("Helvetica", "B", 9)
+            pdf.cell(190, 5, sanitize_text("• Excavation & Génie Civil :"), 0, 1)
+            pdf.set_font("Helvetica", "", 8)
+            pdf.cell(190, 4, sanitize_text(f"  Plans réseaux vérifiés: {ex['plans']} | DICT: {ex['dict']} | Accès: {ex['acces']}"), 0, 1)
+            pdf.cell(190, 4, sanitize_text(f"  Signatures: Chef M. ({ex['chef_m']}) / DO ({ex['do']}) / Casque Rouge ({ex['casque_rouge']})"), 0, 1)
+
+        if "grutage" in details_hrt:
+            g = details_hrt["grutage"]
+            pdf.set_font("Helvetica", "B", 9)
+            pdf.cell(190, 5, sanitize_text("• Levage & Grutage :"), 0, 1)
+            pdf.set_font("Helvetica", "", 8)
+            pdf.cell(190, 4, sanitize_text(f"  Grue: {g['immat']} | Flèche: {g['fleche']}m | Portée: {g['portee']}m | Pression patin: {g['pression_patin']}"), 0, 1)
+            pdf.cell(190, 4, sanitize_text(f"  Poids Charge: {g['poids_charge']} {g['unite']} | Accessoires: {g['poids_acc']} {g['unite']} | Total: {g['poids_total']} {g['unite']}"), 0, 1)
+            pdf.cell(190, 4, sanitize_text(f"  Vent mesuré: {g['vent_val']} {g['vent_unite']} | Balisage: {g['balisage']} | Anémomètre: {g['anemometre']}"), 0, 1)
+
+        if "confine" in details_hrt:
+            co = details_hrt["confine"]
+            pdf.set_font("Helvetica", "B", 9)
+            pdf.cell(190, 5, sanitize_text("• Espace Confiné :"), 0, 1)
+            pdf.set_font("Helvetica", "", 8)
+            pdf.cell(190, 4, sanitize_text(f"  Lieu: {co['lieu']} | Trou d'homme >= 610mm: {co['troudhomme']} | CATEC: {co['catec']} | Masque M20: {co['m20']}"), 0, 1)
+            pdf.cell(190, 4, sanitize_text(f"  Mesures d'O2: {co['o2']}% (Contre-mesure: {co['o2_cm']}%) | Vent. forcée: {co['ventilation']}"), 0, 1)
+            pdf.cell(190, 4, sanitize_text(f"  Signatures: Entrant ({co['entrant']}) / Standby ({co['standby']}) / DO ({co['do']})"), 0, 1)
+
+        if "electrique" in details_hrt:
+            el = details_hrt["electrique"]
+            pdf.set_font("Helvetica", "B", 9)
+            pdf.cell(190, 5, sanitize_text("• Travaux Électriques :"), 0, 1)
+            pdf.set_font("Helvetica", "", 8)
+            pdf.cell(190, 4, sanitize_text(f"  Armoire/Coffret: {el['armoire']} | Relevés/Mesures: {el['releve']} | Voisinage nues: {el['voisinage_nues']}"), 0, 1)
+
+        if "consignation" in details_hrt:
+            lo = details_hrt["consignation"]
+            pdf.set_font("Helvetica", "B", 9)
+            pdf.cell(190, 5, sanitize_text("• Consignation Énergies (LOTO) :"), 0, 1)
+            pdf.set_font("Helvetica", "", 8)
+            pdf.cell(190, 4, sanitize_text(f"  Méthode isolement: {lo['methode_fluide']} | Loc 1: {lo['loc1']} | Loc 2: {lo['loc2']}"), 0, 1)
+            pdf.cell(190, 4, sanitize_text(f"  Consig. Élec: {lo['elec']} ({lo['elec_loc1']} / Cadenas {lo['elec_loc2']}) | Dissipation résiduelle: {lo['residu']}"), 0, 1)
+
+        if "systeme_risque" in details_hrt:
+            sr = details_hrt["systeme_risque"]
+            pdf.set_font("Helvetica", "B", 9)
+            pdf.cell(190, 5, sanitize_text("• Systèmes à Risques / ATEX / Chimique :"), 0, 1)
+            pdf.set_font("Helvetica", "", 8)
+            pdf.cell(190, 4, sanitize_text(f"  Classe 1: {sr['classe1_nom']} | Fluide dangereux: {sr['fluide_nom']} | ATEX: {sr['atex_nom']}"), 0, 1)
+            pdf.cell(190, 4, sanitize_text(f"  Douche/Rince-œil testé: {sr['douche']} | Ramonage: {sr['ramonage']} | Signatures: Intervenant / DO / Opérations"), 0, 1)
+
+        pdf.ln(2)
+
+    # Section 4 : Équipements de Protection Individuelle (EPIs)
     pdf.set_font("Helvetica", "B", 11)
-    pdf.cell(0, 6, sanitize_text("3. SIGNATURES AUDITEES DANS ePDP"), 0, 1)
+    pdf.cell(190, 6, sanitize_text("4. ÉQUIPEMENTS DE PROTECTION INDIVIDUELLE (EPIs) REQUIS"), 1, 1, 'L', True)
+    pdf.set_font("Helvetica", "", 8)
+    epis_str = ", ".join(permis.get("epis_cochis", ["EPIs de base"]))
+    pdf.multi_cell(190, 4, sanitize_text(f"EPIs sélectionnés : {epis_str}"))
+    pdf.ln(2)
+
+    # Section 5 : Signatures
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.cell(190, 6, sanitize_text("5. SIGNATURES AUDITÉES ET DÉPOSÉES DANS ePDP"), 1, 1, 'L', True)
     pdf.set_font("Helvetica", "", 8)
     for sign in permis.get("intervenants", []):
-        pdf.cell(0, 5, sanitize_text(f" [OK] Signature horodatee intervenant : {sign}"), 1, 1)
+        pdf.cell(190, 5, sanitize_text(f" [OK] Signature horodatée intervenant : {sign}"), 1, 1)
 
     return bytes(pdf.output())
 
@@ -449,9 +557,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
             with c_next:
                 if st.button("Suivant ➔", type="primary"): st.session_state.step = 5; st.rerun()
 
-        # ==============================================================================
-        # ÉTAPE 5 : MÉTÉO -> RISQUES PRINCIPAUX -> STA -> EPIS DE BASE P&G
-        # ==============================================================================
         elif current_step == 5:
             st.subheader("5. Analyse des Risques, STA & Équipements de Protection Individuelle")
 
@@ -469,7 +574,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 weather_class = "weather-ok"
                 status_msg = "✅ <b>CONDITIONS FAVORABLES</b> — Tous les travaux extérieurs et en hauteur sont autorisés."
 
-            # MODIFICATION MÉTÉO : Suppression de "(J+1)"
             st.markdown(f"""
             <div class='weather-container {weather_class}'>
                 <div class='weather-flex'>
@@ -602,13 +706,10 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
             c_back, c_next = st.columns(2)
             with c_back:
-                if st.button("⬅️ Précédent"): st.session_state.step = 4; st.rerun()
+                if st.button("⬅️️ Précédent"): st.session_state.step = 4; st.rerun()
             with c_next:
                 if st.button("Suivant ➔", type="primary"): st.session_state.step = 6; st.rerun()
 
-        # ==============================================================================
-        # ÉTAPE 6 : FORMULAIRES SPÉCIFIQUES (MODIFICATIONS SÉPARATION & PHRASÉ SANS "SI")
-        # ==============================================================================
         elif current_step == 6:
             st.subheader("6. Ouverture des Permis Spécifiques")
 
@@ -649,14 +750,12 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
                     st.write("##### Équipements de travail en hauteur utilisés :")
                     
-                    # Remplacement du phrasé "Si PIRL est coché"
                     st.session_state.form_data["h_pirl"] = st.checkbox("PIRL (Plateforme Individuelle Roulante Légère)", value=get_val("h_pirl"))
                     if get_val("h_pirl"):
                         cp1, cp2 = st.columns(2)
                         with cp1: st.session_state.form_data["h_pirl_vgp"] = st.checkbox("VGP et contrôle visuel préalable effectués", value=get_val("h_pirl_vgp"))
                         with cp2: st.session_state.form_data["h_pirl_soc"] = st.text_input("Nom de la société propriétaire/utilisatrice :", value=get_val("h_pirl_soc"))
 
-                    # Remplacement du phrasé "Si Nacelle élévatrice est coché"
                     st.session_state.form_data["h_nacelle"] = st.checkbox("Nacelle élévatrice (PEMP)", value=get_val("h_nacelle"))
                     if get_val("h_nacelle"):
                         st.warning("🥽 **EPI requis :** Harnais + longe de maintien/anti-chute")
@@ -669,7 +768,6 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                             st.session_state.form_data["h_nacelle_harnais"] = st.checkbox("Habilitation / Formation au port du harnais", value=get_val("h_nacelle_harnais"))
                             st.session_state.form_data["h_nacelle_soc"] = st.text_input("Nom de la société utilisatrice de la nacelle :", value=get_val("h_nacelle_soc"))
 
-                    # Remplacement du phrasé "Si Échafaudage est coché"
                     st.session_state.form_data["h_echaf"] = st.checkbox("Échafaudage fixe ou roulant", value=get_val("h_echaf"))
                     if get_val("h_echaf"):
                         st.write("##### Exigences spécifiques pour Échafaudage :")
@@ -1180,18 +1278,35 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 if st.button("Suivant ➔", type="primary"): st.session_state.step = 7; st.rerun()
 
         # ==============================================================================
-        # ÉTAPE 7 : SYNTHÈSE & SOUMISSION
+        # ÉTAPE 7 : SYNTHÈSE DÉTAILLÉE & SOUMISSION (ENRICHI AU MÊME NIVEAU)
         # ==============================================================================
         elif current_step == 7:
-            st.subheader("7. Synthèse & Signatures")
+            st.subheader("7. Synthèse Globale & Signatures")
 
             st.markdown("<div class='status-pending'>⚠️ PERMIS EN ATTENTE DE VALIDATION BATCH (07h30)</div>", unsafe_allow_html=True)
 
             if get_val("is_subcontractor"):
                 st.warning(f"🤝 **Gestion de la sous-traitance (connue grâce au PDP et MOP) :** L'entreprise sélectionnée étant en sous-traitance, à la fin du permis de travail, le N2 de la société principale (**{get_val('titulaire_n2')}**) doit également valider le permis de travail et le signer.")
 
-            st.write("##### Tableau Synthétique des Risques & Permis Spécifiques Renseignés :")
-            
+            # --- DÉTAILS GÉNÉRAUX & LOCALISATION ---
+            with st.expander("📍 1. Informations Générales & Localisation", expanded=True):
+                col_g1, col_g2 = st.columns(2)
+                with col_g1:
+                    st.write(f"• **Entreprise Extérieure :** {get_val('societe')}")
+                    st.write(f"• **PDP :** {get_val('pdp')}")
+                    st.write(f"• **MoP :** {get_val('mop')}")
+                    if get_val("is_subcontractor"):
+                        st.write(f"• **N2 Titulaire Valideur :** {get_val('titulaire_n2')}")
+                with col_g2:
+                    st.write(f"• **Responsable N2 Présent :** {get_val('n2_nom')}")
+                    st.write(f"• **Zone :** {get_val('lieu_pdp')} ({get_val('lieu_precision')})")
+                    st.write(f"• **Description Tâche :** {get_val('description')}")
+                
+                carto = db_zones_carto.get(get_val("lieu_pdp"), {})
+                st.info(f"📍 **Points de Rassemblement & Confinement Secours :** PR: `{carto.get('pr')}` | Confinement: `{carto.get('confinement')}`")
+
+            # --- TABLEAU D'ANALYSE DES RISQUES ---
+            st.write("##### 📋 2. Tableau Synthétique des Risques & Permis Spécifiques :")
             tableau_data = []
             if get_val("p_hauteur"):
                 tableau_data.append({"activite": "Travail en hauteur / Échafaudage / Nacelle", "risque": "Chute de hauteur", "prevention": "Casque jugulaire obligatoire + VGP / Qualifications"})
@@ -1219,6 +1334,122 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
 
             st.table(tableau_data)
 
+            # --- DÉTAILS AVANCÉS DES PERMIS HRT DÉCLENCHÉS ---
+            details_hrt = {}
+            
+            with st.expander("🔍 3. Synthèse Détaillée des Permis Spécifiques Renseignés (HRT)", expanded=True):
+                if get_val("p_meuleuse"):
+                    ops = []
+                    if get_val("meuleuse_u_decoupe"): ops.append(f"Découpe ({get_val('meuleuse_mat_decoupe')})")
+                    if get_val("meuleuse_u_ebavurage"): ops.append(f"Ébavurage ({get_val('meuleuse_mat_ebavurage')})")
+                    if get_val("meuleuse_u_flap"): ops.append("Ponçage Flap")
+                    if get_val("meuleuse_u_blanchiment"): ops.append(f"Blanchiment ({get_val('meuleuse_disque_blanchiment')})")
+                    details_hrt["meuleuse"] = {
+                        "diametre": get_val("meuleuse_diametre"), "marque": get_val("meuleuse_marque"),
+                        "alim": get_val("meuleuse_alim"), "ref": get_val("meuleuse_ref"), "operations": ops
+                    }
+                    st.write(f"⚙️ **Meuleuse :** Disque `{get_val('meuleuse_diametre')}` | `{get_val('meuleuse_marque')}` ({get_val('meuleuse_alim')}) | Réf: `{get_val('meuleuse_ref')}`")
+                    st.write(f"   • Opérations : {', '.join(ops)}")
+
+                if get_val("p_toiture"):
+                    details_hrt["toiture"] = {"protection": get_val("toiture_protection"), "valideur": get_val("toiture_valideur")}
+                    st.write(f"🏢 **Accès Toiture :** Protection : `{get_val('toiture_protection')}` | Valideur habilité : `{get_val('toiture_valideur')}`")
+
+                if get_val("p_points_chauds"):
+                    details_hrt["points_chauds"] = {
+                        "extincteur1": get_val("chaud_extincteur1"), "extincteur2": get_val("chaud_extincteur2"),
+                        "degage_10m": "OUI" if get_val("chaud_degage_10m") else "NON (Bâches requises)",
+                        "vigie": get_val("chaud_vigie_nom"), "surveillance_60m": get_val("chaud_personne_surv_60m"),
+                        "heure_fin": get_val("chaud_heure_fin"), "heure_depart": get_val("chaud_heure_depart")
+                    }
+                    st.write(f"🔥 **Point Chaud :** Extincteurs : `{get_val('chaud_extincteur1')}` & `{get_val('chaud_extincteur2')}` | Zone dégagée 10m : `{'OUI' if get_val('chaud_degage_10m') else 'NON'}`")
+                    st.write(f"   • Vigie travaux : `{get_val('chaud_vigie_nom')}` | Surveillance 60 min : `{get_val('chaud_personne_surv_60m')}` | Fin : `{get_val('chaud_heure_fin')}`")
+
+                if get_val("p_excavation"):
+                    details_hrt["excavation"] = {
+                        "plans": "7/7 Réseaux Vérifiés", "dict": "OUI" if get_val("excav_dict") else "NON",
+                        "acces": get_val("excav_acces"), "chef_m": get_val("excav_chef_manoeuvre"),
+                        "do": get_val("excav_do"), "casque_rouge": get_val("excav_casque_rouge")
+                    }
+                    st.write(f"🚜 **Excavation :** Plans Réseaux : `7/7 Réseaux OK` | DICT : `{'OUI' if get_val('excav_dict') else 'NON'}` | Accès : `{get_val('excav_acces')}`")
+                    st.write(f"   • Signatures : Chef M. (`{get_val('excav_chef_manoeuvre')}`) | DO (`{get_val('excav_do')}`) | Casque Rouge (`{get_val('excav_casque_rouge')}`)")
+
+                if get_val("p_grutage"):
+                    ptot = get_val("grut_poids_charge") + get_val("grut_poids_acc")
+                    details_hrt["grutage"] = {
+                        "immat": get_val("grut_immat"), "fleche": get_val("grut_fleche"),
+                        "portee": get_val("grut_portee"), "pression_patin": get_val("grut_pression_patin"),
+                        "poids_charge": get_val("grut_poids_charge"), "poids_acc": get_val("grut_poids_acc"),
+                        "poids_total": ptot, "unite": get_val("grut_unite"),
+                        "vent_val": get_val("grut_vent_val"), "vent_unite": get_val("grut_vent_unite"),
+                        "balisage": "OUI" if get_val("grut_balisage") else "NON",
+                        "anemometre": "OUI" if get_val("grut_anemometre") else "NON"
+                    }
+                    st.write(f"🏗️ **Grutage :** Grue : `{get_val('grut_immat')}` | Flèche : `{get_val('grut_fleche')}m` | Portée : `{get_val('grut_portee')}m` | Patin : `{get_val('grut_pression_patin')}`")
+                    st.write(f"   • Poids Charge : `{get_val('grut_poids_charge')} {get_val('grut_unite')}` | Accessoires : `{get_val('grut_poids_acc')} {get_val('grut_unite')}` | **Total : `{ptot} {get_val('grut_unite')}`**")
+                    st.write(f"   • Vent mesuré : `{get_val('grut_vent_val')} {get_val('grut_vent_unite')}` | Balisage : `{'OUI' if get_val('grut_balisage') else 'NON'}` | Anémomètre : `{'OUI' if get_val('grut_anemometre') else 'NON'}`")
+
+                if get_val("p_confine"):
+                    details_hrt["confine"] = {
+                        "lieu": get_val("conf_lieu"), "troudhomme": "OUI" if get_val("conf_troudhomme_610") else "NON (<610mm)",
+                        "catec": "OUI" if get_val("conf_catec") else "NON", "m20": "OUI" if get_val("conf_m20") else "NON",
+                        "o2": get_val("conf_o2"), "o2_cm": get_val("conf_o2_contre_mesure"),
+                        "ventilation": "OUI" if get_val("conf_ventilation_forcee") else "NON",
+                        "entrant": get_val("conf_entrant"), "standby": get_val("conf_standby"), "do": get_val("conf_do")
+                    }
+                    st.write(f"🦺 **Espace Confiné :** Lieu : `{get_val('conf_lieu')}` | Trou d'homme ≥ 610mm : `{'OUI' if get_val('conf_troudhomme_610') else 'NON'}` | CATEC : `{'OUI' if get_val('conf_catec') else 'NON'}` | Masque M20 : `{'OUI' if get_val('conf_m20') else 'NON'}`")
+                    st.write(f"   • Oxygène : `{get_val('conf_o2')}%` (Contre-mesure : `{get_val('conf_o2_contre_mesure')}%`) | Ventilation forcée : `{'OUI' if get_val('conf_ventilation_forcee') else 'NON'}`")
+                    st.write(f"   • Signatures : Entrant (`{get_val('conf_entrant')}`) | Standby (`{get_val('conf_standby')}`) | DO (`{get_val('conf_do')}`)")
+
+                if get_val("p_electrique"):
+                    details_hrt["electrique"] = {
+                        "armoire": "OUI" if get_val("elec_armoire") else "NON",
+                        "releve": "OUI" if get_val("elec_releve") else "NON",
+                        "voisinage_nues": "OUI" if get_val("elec_voisinage_nues") else "NON",
+                        "valideur": get_val("elec_valideur_ei") if get_val("elec_voisinage_nues") else "N/A"
+                    }
+                    st.write(f"⚡ **Travaux Électriques :** Intervention Armoire : `{'OUI' if get_val('elec_armoire') else 'NON'}` | Relevés/Mesures : `{'OUI' if get_val('elec_releve') else 'NON'}` | Voisinage sous tension : `{'OUI' if get_val('elec_voisinage_nues') else 'NON'}`")
+
+                if get_val("p_consignation"):
+                    details_hrt["consignation"] = {
+                        "methode_fluide": get_val("loto_ouverture_methode"), "loc1": get_val("loto_ouvert_loc1"), "loc2": get_val("loto_ouvert_loc2"),
+                        "elec": "OUI" if get_val("loto_is_elec") else "NON", "elec_loc1": get_val("loto_is_elec_loc1"), "elec_loc2": get_val("loto_is_elec_loc2"),
+                        "residu": "OUI" if get_val("loto_residu") else "NON"
+                    }
+                    st.write(f"⚡ **Consignation (LOTO) :** Méthode isolement fluide : `{get_val('loto_ouverture_methode')}` (`{get_val('loto_ouvert_loc1')}` / `{get_val('loto_ouvert_loc2')}`)")
+                    st.write(f"   • Consignation Élec : `{'OUI' if get_val('loto_is_elec') else 'NON'}` (`{get_val('loto_is_elec_loc1')}` - Cadenas `{get_val('loto_is_elec_loc2')}`) | Dissipation résiduelle : `{'OUI' if get_val('loto_residu') else 'NON'}`")
+
+                if get_val("p_systeme_risque"):
+                    details_hrt["systeme_risque"] = {
+                        "classe1_nom": get_val("sr_chimique_nom") if get_val("sr_chimique_c1") else "Aucun",
+                        "fluide_nom": get_val("sr_fluide_nom") if get_val("sr_fluide_dang") else "Aucun",
+                        "atex_nom": get_val("sr_atex_nom") if get_val("sr_atex") else "Non ATEX",
+                        "douche": "OUI" if get_val("sr_douche_rince") else "NON",
+                        "ramonage": "OUI" if get_val("sr_ramonage") else "NON",
+                        "intervenant": get_val("sr_sign_intervenant"), "do": get_val("sr_sign_do"), "operations": get_val("sr_sign_operations")
+                    }
+                    st.write(f"☣ **Systèmes à Risques / ATEX :** Produit Classe 1 : `{get_val('sr_chimique_nom') if get_val('sr_chimique_c1') else 'Aucun'}` | Fluide Dangereux : `{get_val('sr_fluide_nom') if get_val('sr_fluide_dang') else 'Aucun'}` | Zone ATEX : `{get_val('sr_atex_nom') if get_val('sr_atex') else 'Non ATEX'}`")
+                    st.write(f"   • Douche/Rince-œil testé : `{'OUI' if get_val('sr_douche_rince') else 'NON'}` | Ramonage : `{'OUI' if get_val('sr_ramonage') else 'NON'}`")
+                    st.write(f"   • Signatures : Intervenant (`{get_val('sr_sign_intervenant')}`) | DO (`{get_val('sr_sign_do')}`) | Opérations (`{get_val('sr_sign_operations')}`)")
+
+                if not details_hrt:
+                    st.write("Aucun permis spécifique HRT n'a été coché pour ce chantier.")
+
+            # --- LISTE DES EPIS RETENUS ---
+            epis_cochis = []
+            if get_val("epi_lunettes_chantier_en166"): epis_cochis.append("Lunettes Chantier EN166")
+            if get_val("epi_visiere_idra_en166b"): epis_cochis.append("Visière IDRA EN166B")
+            if get_val("epi_casque_jugulaire"): epis_cochis.append("Casque Jugulaire")
+            if get_val("epi_gants_anticoupure_4x43d"): epis_cochis.append("Gants Anti-coupure 4x43D")
+            if get_val("epi_gants_manutention_cuir"): epis_cochis.append("Gants Manutention Cuir")
+            if get_val("epi_gants_chimiques_en374"): epis_cochis.append("Gants Chimiques EN374")
+            if get_val("epi_gants_elec_en60903"): epis_cochis.append("Gants Isolants Élec EN60903")
+            if get_val("epi_resp_cartouche_abek_en14387"): epis_cochis.append("Masque Cartouche ABEK")
+            if get_val("epi_autre_texte"): epis_cochis.append(get_val("epi_autre_texte"))
+
+            with st.expander("🥽 4. Équipements de Protection Individuelle (EPIs) Validés", expanded=False):
+                st.write("• **EPIs cochés pour le permis :** " + ", ".join(epis_cochis))
+
             permis_final = {
                 "id": f"PT-2026-EXACT-0{len(st.session_state.permis_db)+1}",
                 "date_travaux": get_val("date_str"),
@@ -1230,10 +1461,13 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 "n2": get_val("n2_nom"),
                 "zone": get_val("lieu_pdp"),
                 "emplacement": get_val("lieu_precision"),
+                "description": get_val("description"),
                 "statut": "EN_ATTENTE_BATCH",
                 "heure": datetime.datetime.now().strftime("%H:%M"),
                 "intervenants": list(get_val("intervenants", [])),
-                "tableau_risques": tableau_data
+                "tableau_risques": tableau_data,
+                "details_hrt": details_hrt,
+                "epis_cochis": epis_cochis
             }
 
             pdf_bytes = generer_pdf_bytes(permis_final)
@@ -1243,7 +1477,7 @@ if role == "🖥️ Borne Kiosk Tactile (EE / N2)":
                 if st.button("⬅️ Précédent"): st.session_state.step = 6; st.rerun()
 
             with c_pdf:
-                st.download_button("📄 TÉLÉCHARGER PERMIS PDF", data=pdf_bytes, file_name=f"Permis_{permis_final['id']}.pdf", mime="application/pdf", use_container_width=True)
+                st.download_button("📄 TÉLÉCHARGER PERMIS PDF COMPLET", data=pdf_bytes, file_name=f"Permis_{permis_final['id']}.pdf", mime="application/pdf", use_container_width=True)
 
             with c_sub:
                 if st.button("🚀 SOUMETTRE AU BATCH DE 07h30", type="primary", use_container_width=True):
